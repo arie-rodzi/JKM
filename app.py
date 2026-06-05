@@ -49,7 +49,7 @@ footer {visibility: hidden;}
 }
 
 .hero {
-    margin-top: -58px;
+    margin-top: 20px;
     padding: 34px 42px 30px 42px;
     border-radius: 0px 0px 34px 34px;
     background:
