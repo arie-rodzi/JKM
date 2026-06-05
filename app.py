@@ -4,14 +4,18 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
+# =========================================================
+# KONFIGURASI HALAMAN
+# =========================================================
 st.set_page_config(
-    page_title="Dashboard Kajian Psikologi & Kaunseling JKM",
+    page_title="Dashboard JKM | Psikologi & Kaunseling",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # =========================================================
-# GAYA PAPARAN PREMIUM
+# REKA BENTUK PREMIUM
 # =========================================================
 st.markdown("""
 <style>
@@ -21,49 +25,56 @@ html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
 }
 
+/* HIDE STREAMLIT WHITE HEADER */
+header {visibility: hidden;}
+[data-testid="stToolbar"] {display: none;}
+[data-testid="stDecoration"] {display: none;}
+[data-testid="stStatusWidget"] {display: none;}
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+
 .stApp {
     background:
-        radial-gradient(circle at top left, rgba(253, 230, 138, 0.20), transparent 32%),
-        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 30%),
-        linear-gradient(135deg, #030712 0%, #071526 38%, #0B2545 72%, #123C69 100%);
+        radial-gradient(circle at 12% 5%, rgba(253, 230, 138, 0.26), transparent 27%),
+        radial-gradient(circle at 88% 7%, rgba(16, 185, 129, 0.22), transparent 28%),
+        radial-gradient(circle at 50% 95%, rgba(59, 130, 246, 0.20), transparent 38%),
+        linear-gradient(135deg, #020617 0%, #071526 40%, #0B2545 78%, #123C69 100%);
     color: white;
 }
 
 .block-container {
-    padding-top: 1.4rem;
+    padding-top: 0rem !important;
     padding-bottom: 3rem;
-    max-width: 1450px;
+    max-width: 1500px;
 }
 
-.hero-box {
-    padding: 34px 38px;
-    border-radius: 32px;
+.hero {
+    margin-top: -58px;
+    padding: 34px 42px 30px 42px;
+    border-radius: 0px 0px 34px 34px;
     background:
-        linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)),
+        linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.055)),
         linear-gradient(90deg, rgba(253,230,138,0.16), rgba(14,165,233,0.08));
-    border: 1px solid rgba(255,255,255,0.25);
-    box-shadow: 0 28px 80px rgba(0,0,0,0.42);
-    margin-bottom: 26px;
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 32px 90px rgba(0,0,0,0.48);
+    margin-bottom: 22px;
 }
 
-.main-title {
-    font-size: 44px;
-    line-height: 1.1;
-    font-weight: 950;
-    letter-spacing: -1.2px;
+.hero-title {
     color: #FDE68A;
-    text-shadow: 0 0 30px rgba(253,230,138,0.28);
+    font-size: 39px;
+    font-weight: 950;
+    line-height: 1.12;
+    letter-spacing: -1.1px;
+    text-shadow: 0 0 28px rgba(253,230,138,0.25);
 }
 
-.sub-title {
-    font-size: 17px;
+.hero-subtitle {
     color: #DDEBFF;
-    margin-top: 12px;
-    max-width: 980px;
-}
-
-.badge-row {
-    margin-top: 22px;
+    font-size: 16px;
+    font-weight: 550;
+    margin-top: 14px;
+    max-width: 1050px;
 }
 
 .badge {
@@ -71,85 +82,89 @@ html, body, [class*="css"] {
     padding: 8px 14px;
     border-radius: 999px;
     background: rgba(15, 23, 42, 0.58);
-    border: 1px solid rgba(253,230,138,0.38);
+    border: 1px solid rgba(253,230,138,0.42);
     color: #FDE68A;
-    font-weight: 700;
-    font-size: 13px;
+    font-weight: 800;
+    font-size: 12px;
     margin-right: 8px;
-    margin-bottom: 8px;
+    margin-top: 16px;
 }
 
 .kpi-card {
-    min-height: 150px;
-    padding: 22px 22px 20px 22px;
+    min-height: 142px;
+    padding: 22px;
     border-radius: 28px;
     background:
         linear-gradient(145deg, rgba(255,255,255,0.20), rgba(255,255,255,0.055)),
-        radial-gradient(circle at top right, rgba(253,230,138,0.23), transparent 38%);
+        radial-gradient(circle at top right, rgba(253,230,138,0.25), transparent 42%);
     border: 1px solid rgba(255,255,255,0.24);
     box-shadow:
-        0 22px 48px rgba(0,0,0,0.34),
+        0 24px 55px rgba(0,0,0,0.38),
         inset 0 1px 0 rgba(255,255,255,0.22);
-    transition: all 0.25s ease;
-}
-
-.kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 28px 65px rgba(0,0,0,0.42);
-    border-color: rgba(253,230,138,0.55);
+    margin-bottom: 12px;
 }
 
 .kpi-label {
     color: #E0F2FE;
-    font-size: 13px;
-    font-weight: 750;
+    font-size: 12px;
+    font-weight: 850;
     text-transform: uppercase;
     letter-spacing: .55px;
 }
 
 .kpi-value {
     color: #FDE68A;
-    font-size: 39px;
+    font-size: 36px;
     font-weight: 950;
-    margin-top: 10px;
+    margin-top: 9px;
     line-height: 1;
 }
 
 .kpi-note {
     color: #BBF7D0;
-    font-size: 13px;
-    font-weight: 650;
+    font-size: 12.5px;
+    font-weight: 700;
     margin-top: 12px;
 }
 
+.panel {
+    padding: 22px 24px;
+    border-radius: 26px;
+    background: rgba(255,255,255,0.095);
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.30);
+    margin-bottom: 18px;
+}
+
 .info-box {
-    padding: 20px 24px;
+    padding: 18px 22px;
     border-radius: 24px;
     background:
         linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.055));
     border: 1px solid rgba(255,255,255,0.20);
     border-left: 6px solid #FDE68A;
-    box-shadow: 0 18px 38px rgba(0,0,0,0.26);
-    margin: 16px 0 22px 0;
     color: #EAF6FF;
+    box-shadow: 0 18px 38px rgba(0,0,0,0.26);
+    margin-bottom: 18px;
 }
 
-.section-card {
-    padding: 24px;
-    border-radius: 26px;
-    background: rgba(255,255,255,0.09);
-    border: 1px solid rgba(255,255,255,0.18);
-    box-shadow: 0 18px 45px rgba(0,0,0,0.28);
-    margin-bottom: 20px;
+.insight-card {
+    padding: 18px 20px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(253,230,138,0.16), rgba(255,255,255,0.07));
+    border: 1px solid rgba(253,230,138,0.25);
+    color: #F8FAFC;
+    min-height: 110px;
 }
 
 h1, h2, h3 {
     color: #FDE68A !important;
-    font-weight: 900 !important;
+    font-weight: 950 !important;
 }
 
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
+    gap: 9px;
+    flex-wrap: wrap;
 }
 
 .stTabs [data-baseweb="tab"] {
@@ -158,28 +173,37 @@ h1, h2, h3 {
     background: rgba(255,255,255,0.08);
     color: #E0F2FE;
     border: 1px solid rgba(255,255,255,0.14);
+    font-weight: 750;
 }
 
 .stTabs [aria-selected="true"] {
     background: linear-gradient(135deg, #FDE68A, #F59E0B) !important;
     color: #111827 !important;
-    font-weight: 900;
+    font-weight: 950;
 }
 
-[data-testid="stMetricValue"] {
-    color: #FDE68A;
+div[data-baseweb="select"] > div {
+    background-color: rgba(255,255,255,0.92);
+    border-radius: 16px;
+    min-height: 54px;
 }
 
 .stDataFrame {
-    border-radius: 18px;
+    border-radius: 20px;
     overflow: hidden;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: rgba(255,255,255,0.15);
+    margin: 18px 0;
 }
 </style>
 """, unsafe_allow_html=True)
 
-
 # =========================================================
-# DATA SIMULASI SELARAS TOR
+# DATA SIMULASI TOR
 # =========================================================
 @st.cache_data
 def jana_data():
@@ -198,49 +222,58 @@ def jana_data():
         "Sarawak": "Sarawak",
     }
 
-    negeri = list(negeri_zon.keys())
     rows = []
+    negeri = list(negeri_zon.keys())
 
     for i in range(600):
         n = np.random.choice(negeri)
         z = negeri_zon[n]
 
-        s1 = np.clip(np.random.normal(82, 7), 55, 98)
-        s2 = np.clip(np.random.normal(78, 8), 50, 97)
-        s3 = np.clip(np.random.normal(76, 8), 50, 95)
-        s4 = np.clip(np.random.normal(74, 9), 45, 96)
+        faktor_negeri = {
+            "Selangor": 4, "Kuala Lumpur": 3, "Johor": 2, "Pulau Pinang": 2,
+            "Melaka": 1, "Kedah": 0, "Pahang": -1, "Kelantan": -2,
+            "Sarawak": -3, "Sabah": -4
+        }[n]
 
-        whodas_t1 = np.clip(np.random.normal(58, 10), 25, 90)
-        whodas_t2 = np.clip(whodas_t1 - np.random.normal(15, 5), 15, 85)
+        s1 = np.clip(np.random.normal(82 + faktor_negeri, 6.5), 50, 99)
+        s2 = np.clip(np.random.normal(78 + faktor_negeri * 0.7, 7.5), 48, 98)
+        s3 = np.clip(np.random.normal(76 + faktor_negeri * 0.6, 8.0), 45, 96)
+        s4 = np.clip(np.random.normal(74 + faktor_negeri * 0.8, 8.5), 42, 96)
+
+        whodas_t1 = np.clip(np.random.normal(59 - faktor_negeri * 0.4, 10), 25, 90)
+        whodas_t2 = np.clip(whodas_t1 - np.random.normal(15 + faktor_negeri * 0.15, 5), 15, 85)
         whodas_t3 = np.clip(whodas_t2 + np.random.normal(3, 4), 15, 85)
 
-        wellbeing_t1 = np.clip(np.random.normal(52, 10), 20, 85)
-        wellbeing_t2 = np.clip(wellbeing_t1 + np.random.normal(18, 6), 25, 98)
-        wellbeing_t3 = np.clip(wellbeing_t2 - np.random.normal(2, 4), 25, 98)
+        wellbeing_t1 = np.clip(np.random.normal(52 + faktor_negeri * 0.3, 10), 20, 88)
+        wellbeing_t2 = np.clip(wellbeing_t1 + np.random.normal(18 + faktor_negeri * 0.2, 6), 25, 99)
+        wellbeing_t3 = np.clip(wellbeing_t2 - np.random.normal(2, 4), 25, 99)
 
-        satisfaction = np.clip(s1 + np.random.normal(2, 5), 45, 100)
-        quality = np.clip((s1 * 0.25) + (s2 * 0.40) + (s3 * 0.35), 40, 100)
-        capacity = np.clip((s2 * 0.35) + (s3 * 0.30) + (s4 * 0.35), 40, 100)
-        mechanism = np.clip((s1 * 0.55) + (s2 * 0.45), 40, 100)
+        kepuasan = np.clip(s1 + np.random.normal(2, 4.5), 45, 100)
+        mekanisme = np.clip((s1 * 0.55) + (s2 * 0.45), 40, 100)
+        kualiti = np.clip((s1 * 0.25) + (s2 * 0.40) + (s3 * 0.35), 40, 100)
+        kapasiti = np.clip((s2 * 0.35) + (s3 * 0.30) + (s4 * 0.35), 40, 100)
+
         outcome = np.clip(
             ((100 - whodas_t2) * 0.35) +
             (wellbeing_t2 * 0.35) +
-            (satisfaction * 0.20) +
-            (mechanism * 0.10), 40, 100
+            (kepuasan * 0.20) +
+            (mekanisme * 0.10),
+            40, 100
         )
 
-        integrated = np.clip(
+        bersepadu = np.clip(
             (outcome * 0.30) +
-            (mechanism * 0.20) +
-            (quality * 0.20) +
-            (capacity * 0.20) +
-            (s4 * 0.10), 40, 100
+            (mekanisme * 0.20) +
+            (kualiti * 0.20) +
+            (kapasiti * 0.20) +
+            (s4 * 0.10),
+            40, 100
         )
 
         rows.append([
             i + 1, n, z,
             s1, s2, s3, s4,
-            satisfaction, outcome, mechanism, quality, capacity, integrated,
+            kepuasan, outcome, mekanisme, kualiti, kapasiti, bersepadu,
             whodas_t1, whodas_t2, whodas_t3,
             wellbeing_t1, wellbeing_t2, wellbeing_t3
         ])
@@ -254,9 +287,7 @@ def jana_data():
         "Wellbeing_T1", "Wellbeing_T2", "Wellbeing_T3"
     ])
 
-
 df = jana_data()
-
 
 # =========================================================
 # PEMETAAN TOR
@@ -279,10 +310,12 @@ RESULT_SOURCE_MAP = pd.DataFrame([
     ["RE-AIM", "Data pentadbiran + outcome + IPKJ + temu bual", "S1 + S2 + S3 + S4", "K1-K5", "RE-AIM", "Reach, Effectiveness, Adoption, Implementation dan Maintenance."],
 ], columns=["Result Sistem", "Questionnaire / Data Digunakan", "Sumber", "Konstruk", "Teori", "Bagaimana Sistem Kira / Jana Result"])
 
+# =========================================================
+# FUNGSI
+# =========================================================
+def purata(x):
+    return float(x.mean())
 
-# =========================================================
-# FUNGSI BANTUAN
-# =========================================================
 def kpi(label, value, note=""):
     st.markdown(f"""
     <div class="kpi-card">
@@ -292,21 +325,53 @@ def kpi(label, value, note=""):
     </div>
     """, unsafe_allow_html=True)
 
+def panel_open():
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
 
-def ringkas(series):
-    return float(series.mean())
+def panel_close():
+    st.markdown('</div>', unsafe_allow_html=True)
 
+def graf_bar(data, x, y, title):
+    fig = px.bar(data, x=x, y=y, text_auto=".1f", title=title)
+    fig.update_traces(marker_line_width=0, textposition="outside")
+    fig.update_layout(
+        template="plotly_dark",
+        height=430,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="white"),
+        title_font=dict(size=22, color="#FDE68A"),
+        margin=dict(l=20, r=20, t=70, b=30)
+    )
+    return fig
+
+def graf_line(data, x, y, title):
+    fig = px.line(data, x=x, y=y, markers=True, title=title)
+    fig.update_traces(line=dict(width=5), marker=dict(size=13))
+    fig.update_layout(
+        template="plotly_dark",
+        height=420,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="white"),
+        title_font=dict(size=22, color="#FDE68A"),
+        margin=dict(l=20, r=20, t=70, b=30)
+    )
+    return fig
 
 def pilih_data(df):
-    col1, col2 = st.columns(2)
-    with col1:
+    st.markdown("### Penapis Analisis")
+    c1, c2 = st.columns(2)
+
+    with c1:
         zon = st.selectbox("Pilih Zon", ["Semua Zon"] + sorted(df["Zon"].unique()))
-    with col2:
+
+    with c2:
         if zon == "Semua Zon":
-            negeri_list = sorted(df["Negeri"].unique())
+            negeri_opsyen = sorted(df["Negeri"].unique())
         else:
-            negeri_list = sorted(df[df["Zon"] == zon]["Negeri"].unique())
-        negeri = st.selectbox("Pilih Negeri", ["Semua Negeri"] + negeri_list)
+            negeri_opsyen = sorted(df[df["Zon"] == zon]["Negeri"].unique())
+        negeri = st.selectbox("Pilih Negeri", ["Semua Negeri"] + negeri_opsyen)
 
     dff = df.copy()
     if zon != "Semua Zon":
@@ -316,76 +381,103 @@ def pilih_data(df):
 
     return dff, zon, negeri
 
-
-def plot_bar(data, x, y, title):
-    fig = px.bar(data, x=x, y=y, text_auto=".1f", title=title)
-    fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white"),
-        title_font=dict(size=20)
-    )
-    return fig
-
-
-def plot_line(data, x, y, title):
-    fig = px.line(data, x=x, y=y, markers=True, title=title)
-    fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white")
-    )
-    return fig
-
+# =========================================================
+# HERO
+# =========================================================
+st.markdown("""
+<div class="hero">
+    <div class="hero-title">
+        Dashboard Kajian Penilaian Keberkesanan<br>
+        Perkhidmatan Psikologi dan Kaunseling JKM
+    </div>
+    <div class="hero-subtitle">
+        Sistem Analitik Simulasi Premium berasaskan TOR JKM: Konstruk K1-K5,
+        Sumber Data S1-S4, SEM, RE-AIM, CMO, analisis negeri, zon dan outcome T1-T2-T3.
+    </div>
+    <span class="badge">Data Simulasi Tender</span>
+    <span class="badge">S1-S4 Triangulasi</span>
+    <span class="badge">K1-K5 Konstruk</span>
+    <span class="badge">SEM Analisis Utama</span>
+    <span class="badge">RE-AIM & CMO</span>
+</div>
+""", unsafe_allow_html=True)
 
 # =========================================================
-# HEADER
+# PENAPIS
 # =========================================================
-st.markdown('<div class="main-title">Dashboard Kajian Penilaian Keberkesanan Perkhidmatan Psikologi dan Kaunseling JKM</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Sistem Analitik Simulasi Berasaskan TOR: Konstruk K1-K5, Sumber Data S1-S4, SEM, RE-AIM dan CMO</div>', unsafe_allow_html=True)
-
 dff, zon_pilih, negeri_pilih = pilih_data(df)
 
 st.markdown(f"""
 <div class="info-box">
-<b>Nota:</b> Paparan ini menggunakan data simulasi untuk demonstrasi cadangan teknikal. 
-Semua analisis di bawah berubah mengikut penapis yang dipilih: <b>{zon_pilih}</b> dan <b>{negeri_pilih}</b>.
+<b>Skop Paparan Semasa:</b> {zon_pilih} | {negeri_pilih}<br>
+Semua KPI, graf, SEM, RE-AIM, CMO dan jadual di bawah berubah mengikut penapis ini.
+Data ini ialah <b>simulasi</b> untuk demonstrasi cadangan teknikal dan perlu diganti dengan data lapangan sebenar selepas kajian dilaksanakan.
 </div>
 """, unsafe_allow_html=True)
 
-
 # =========================================================
-# KPI BOX WAJIB
+# KPI WAJIB
 # =========================================================
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    kpi("Indeks Keberkesanan Bersepadu", f"{ringkas(dff['Indeks_Keberkesanan_Bersepadu']):.1f}%", "S1 + S2 + S3 + S4")
+    kpi("Indeks Keberkesanan Bersepadu", f"{purata(dff['Indeks_Keberkesanan_Bersepadu']):.1f}%", "S1 + S2 + S3 + S4")
 with c2:
-    kpi("Indeks Kepuasan Klien", f"{ringkas(dff['Indeks_Kepuasan_Klien']):.1f}%", "S1: Klien")
+    kpi("Indeks Kepuasan Klien", f"{purata(dff['Indeks_Kepuasan_Klien']):.1f}%", "S1 Klien")
 with c3:
-    kpi("Indeks Outcome Klien", f"{ringkas(dff['Indeks_Outcome_Klien']):.1f}%", "K1: Outcome")
+    kpi("Indeks Outcome Klien", f"{purata(dff['Indeks_Outcome_Klien']):.1f}%", "K1 Outcome")
 with c4:
-    kpi("Kualiti Penyampaian", f"{ringkas(dff['Kualiti_Penyampaian']):.1f}%", "K3: Kualiti")
+    kpi("Kualiti Penyampaian", f"{purata(dff['Kualiti_Penyampaian']):.1f}%", "K3 Kualiti")
 
 c5, c6, c7, c8 = st.columns(4)
 with c5:
-    kpi("Kapasiti Organisasi", f"{ringkas(dff['Kapasiti_Organisasi']):.1f}%", "K4: Kapasiti")
+    kpi("Kapasiti Organisasi", f"{purata(dff['Kapasiti_Organisasi']):.1f}%", "K4 Kapasiti")
 with c6:
-    kpi("Mekanisme Perkhidmatan", f"{ringkas(dff['Mekanisme_Perkhidmatan']):.1f}%", "K2: Mekanisme")
+    kpi("Mekanisme Perkhidmatan", f"{purata(dff['Mekanisme_Perkhidmatan']):.1f}%", "K2 Mekanisme")
 with c7:
-    kpi("Jumlah Responden Kuantitatif", f"{len(dff):,}", "Sampel simulasi")
+    kpi("Responden Kuantitatif", f"{len(dff):,}", "Subset selepas penapis")
 with c8:
-    kpi("Jumlah Temu Bual Kualitatif", "85", "Selaras TOR")
-
+    kpi("Temu Bual Kualitatif", "85", "Selaras TOR")
 
 # =========================================================
-# TAB ANALISIS
+# QUICK INSIGHT
+# =========================================================
+state_summary = df.groupby("Negeri", as_index=False)["Indeks_Keberkesanan_Bersepadu"].mean()
+best_state = state_summary.sort_values("Indeks_Keberkesanan_Bersepadu", ascending=False).iloc[0]
+low_state = state_summary.sort_values("Indeks_Keberkesanan_Bersepadu", ascending=True).iloc[0]
+
+i1, i2, i3 = st.columns(3)
+with i1:
+    st.markdown(f"""
+    <div class="insight-card">
+    <b>Negeri Prestasi Tertinggi</b><br><br>
+    {best_state['Negeri']} merekodkan skor simulasi tertinggi iaitu 
+    <b>{best_state['Indeks_Keberkesanan_Bersepadu']:.1f}%</b>.
+    </div>
+    """, unsafe_allow_html=True)
+with i2:
+    st.markdown(f"""
+    <div class="insight-card">
+    <b>Negeri Memerlukan Perhatian</b><br><br>
+    {low_state['Negeri']} merekodkan skor simulasi terendah iaitu 
+    <b>{low_state['Indeks_Keberkesanan_Bersepadu']:.1f}%</b>.
+    </div>
+    """, unsafe_allow_html=True)
+with i3:
+    improvement = purata(dff["Wellbeing_T2"]) - purata(dff["Wellbeing_T1"])
+    st.markdown(f"""
+    <div class="insight-card">
+    <b>Peningkatan Outcome T1 ke T2</b><br><br>
+    Skor kesejahteraan meningkat sebanyak 
+    <b>{improvement:.1f} mata</b> selepas intervensi.
+    </div>
+    """, unsafe_allow_html=True)
+
+# =========================================================
+# TAB
 # =========================================================
 tabs = st.tabs([
     "Ringkasan Eksekutif",
-    "Analisis Negeri dan Zon",
+    "Negeri & Zon",
     "Outcome T1-T2-T3",
     "SEM",
     "RE-AIM",
@@ -394,19 +486,15 @@ tabs = st.tabs([
     "Simulasi Dasar"
 ])
 
-
-# =========================================================
-# RINGKASAN EKSEKUTIF
-# =========================================================
 with tabs[0]:
     st.subheader("Ringkasan Eksekutif")
 
     st.markdown(f"""
     <div class="info-box">
-    Berdasarkan data simulasi bagi pilihan semasa, Indeks Keberkesanan Bersepadu ialah 
-    <b>{ringkas(dff['Indeks_Keberkesanan_Bersepadu']):.1f}%</b>. 
-    Indeks ini tidak bergantung kepada satu questionnaire sahaja, tetapi menggabungkan 
-    <b>S1 Klien, S2 PPsi/PPPsi, S3 Warga JKM dan S4 Data Pentadbiran</b>.
+    Indeks Keberkesanan Bersepadu bagi paparan semasa ialah 
+    <b>{purata(dff['Indeks_Keberkesanan_Bersepadu']):.1f}%</b>. 
+    Indeks ini menggabungkan S1 Klien, S2 PPsi/PPPsi, S3 Warga JKM dan S4 Data Pentadbiran.
+    Kepuasan klien pula dikira khusus daripada S1 kerana kepuasan hanya boleh dijawab secara langsung oleh klien.
     </div>
     """, unsafe_allow_html=True)
 
@@ -420,22 +508,17 @@ with tabs[0]:
             "Indeks Keberkesanan Bersepadu"
         ],
         "Skor Purata": [
-            ringkas(dff["S1_Klien"]),
-            ringkas(dff["S2_PPsi_PPPsi"]),
-            ringkas(dff["S3_Warga_JKM"]),
-            ringkas(dff["S4_Data_Pentadbiran"]),
-            ringkas(dff["Indeks_Kepuasan_Klien"]),
-            ringkas(dff["Indeks_Keberkesanan_Bersepadu"])
+            purata(dff["S1_Klien"]),
+            purata(dff["S2_PPsi_PPPsi"]),
+            purata(dff["S3_Warga_JKM"]),
+            purata(dff["S4_Data_Pentadbiran"]),
+            purata(dff["Indeks_Kepuasan_Klien"]),
+            purata(dff["Indeks_Keberkesanan_Bersepadu"])
         ]
     })
 
-    st.plotly_chart(plot_bar(summary, "Komponen", "Skor Purata", "Ringkasan Skor Utama"), use_container_width=True)
-    st.dataframe(summary, use_container_width=True)
+    st.plotly_chart(graf_bar(summary, "Komponen", "Skor Purata", "Ringkasan Skor Utama"), use_container_width=True)
 
-
-# =========================================================
-# NEGERI DAN ZON
-# =========================================================
 with tabs[1]:
     st.subheader("Analisis Perbandingan Negeri dan Zon")
 
@@ -453,31 +536,20 @@ with tabs[1]:
         "Kapasiti_Organisasi"
     ]].mean()
 
-    st.plotly_chart(plot_bar(by_state, "Negeri", "Indeks_Keberkesanan_Bersepadu", "Indeks Keberkesanan Mengikut Negeri"), use_container_width=True)
-    st.plotly_chart(plot_bar(by_zone, "Zon", "Indeks_Keberkesanan_Bersepadu", "Indeks Keberkesanan Mengikut Zon"), use_container_width=True)
+    st.plotly_chart(graf_bar(by_state, "Negeri", "Indeks_Keberkesanan_Bersepadu", "Indeks Keberkesanan Mengikut Negeri"), use_container_width=True)
+    st.plotly_chart(graf_bar(by_zone, "Zon", "Indeks_Keberkesanan_Bersepadu", "Indeks Keberkesanan Mengikut Zon"), use_container_width=True)
 
-    st.dataframe(by_state.round(2), use_container_width=True)
-    st.dataframe(by_zone.round(2), use_container_width=True)
+    with st.expander("Lihat jadual terperinci negeri dan zon"):
+        st.dataframe(by_state.round(2), use_container_width=True)
+        st.dataframe(by_zone.round(2), use_container_width=True)
 
-
-# =========================================================
-# OUTCOME T1-T2-T3
-# =========================================================
 with tabs[2]:
     st.subheader("Analisis Outcome Longitudinal T1-T2-T3")
 
     t_data = pd.DataFrame({
         "Masa": ["T1", "T2", "T3"],
-        "WHODAS": [
-            ringkas(dff["WHODAS_T1"]),
-            ringkas(dff["WHODAS_T2"]),
-            ringkas(dff["WHODAS_T3"])
-        ],
-        "Wellbeing": [
-            ringkas(dff["Wellbeing_T1"]),
-            ringkas(dff["Wellbeing_T2"]),
-            ringkas(dff["Wellbeing_T3"])
-        ]
+        "WHODAS": [purata(dff["WHODAS_T1"]), purata(dff["WHODAS_T2"]), purata(dff["WHODAS_T3"])],
+        "Wellbeing": [purata(dff["Wellbeing_T1"]), purata(dff["Wellbeing_T2"]), purata(dff["Wellbeing_T3"])]
     })
 
     st.markdown("""
@@ -487,163 +559,148 @@ with tabs[2]:
     </div>
     """, unsafe_allow_html=True)
 
-    st.plotly_chart(plot_line(t_data, "Masa", "WHODAS", "Trend WHODAS T1-T2-T3"), use_container_width=True)
-    st.plotly_chart(plot_line(t_data, "Masa", "Wellbeing", "Trend Wellbeing T1-T2-T3"), use_container_width=True)
-    st.dataframe(t_data.round(2), use_container_width=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.plotly_chart(graf_line(t_data, "Masa", "WHODAS", "Trend WHODAS T1-T2-T3"), use_container_width=True)
+    with c2:
+        st.plotly_chart(graf_line(t_data, "Masa", "Wellbeing", "Trend Wellbeing T1-T2-T3"), use_container_width=True)
 
+    with st.expander("Lihat data T1-T2-T3"):
+        st.dataframe(t_data.round(2), use_container_width=True)
 
-# =========================================================
-# SEM
-# =========================================================
 with tabs[3]:
     st.subheader("Analisis SEM: Kapasiti → Kualiti → Mekanisme → Outcome")
 
-    cap = ringkas(dff["Kapasiti_Organisasi"]) / 100
-    qua = ringkas(dff["Kualiti_Penyampaian"]) / 100
-    mec = ringkas(dff["Mekanisme_Perkhidmatan"]) / 100
-    out = ringkas(dff["Indeks_Outcome_Klien"]) / 100
+    cap = purata(dff["Kapasiti_Organisasi"]) / 100
+    qua = purata(dff["Kualiti_Penyampaian"]) / 100
+    mec = purata(dff["Mekanisme_Perkhidmatan"]) / 100
 
     beta1 = np.clip(0.45 + cap * 0.35, 0.50, 0.88)
     beta2 = np.clip(0.42 + qua * 0.35, 0.50, 0.88)
     beta3 = np.clip(0.40 + mec * 0.35, 0.50, 0.88)
 
-    sem_table = pd.DataFrame({
-        "Hubungan SEM": [
-            "Kapasiti Organisasi → Kualiti Penyampaian",
-            "Kualiti Penyampaian → Mekanisme Perkhidmatan",
-            "Mekanisme Perkhidmatan → Outcome Klien"
-        ],
-        "Beta": [beta1, beta2, beta3],
-        "Nilai-p": ["<0.001", "<0.001", "<0.001"],
-        "Interpretasi": [
-            "Kapasiti organisasi menyokong kualiti penyampaian.",
-            "Kualiti penyampaian mengukuhkan mekanisme perkhidmatan.",
-            "Mekanisme perkhidmatan meningkatkan outcome klien."
-        ]
-    })
-
     c1, c2, c3 = st.columns(3)
     with c1:
-        kpi("R² Kualiti", f"{beta1**2:.2f}", "K4 → K3")
+        kpi("β Kapasiti → Kualiti", f"{beta1:.2f}", "K4 → K3")
     with c2:
-        kpi("R² Mekanisme", f"{beta2**2:.2f}", "K3 → K2")
+        kpi("β Kualiti → Mekanisme", f"{beta2:.2f}", "K3 → K2")
     with c3:
-        kpi("R² Outcome", f"{beta3**2:.2f}", "K2 → K1")
+        kpi("β Mekanisme → Outcome", f"{beta3:.2f}", "K2 → K1")
 
     fig = go.Figure()
     nodes = ["Kapasiti Organisasi", "Kualiti Penyampaian", "Mekanisme Perkhidmatan", "Outcome Klien"]
-    xs = [0.1, 0.38, 0.66, 0.92]
+    xs = [0.08, 0.36, 0.64, 0.92]
     ys = [0.5, 0.5, 0.5, 0.5]
 
     fig.add_trace(go.Scatter(
         x=xs, y=ys,
         mode="markers+text",
-        marker=dict(size=65),
+        marker=dict(size=72, color=["#FDE68A", "#93C5FD", "#86EFAC", "#FCA5A5"]),
         text=nodes,
         textposition="bottom center",
-        hovertext=nodes,
+        textfont=dict(size=14, color="white"),
         hoverinfo="text"
     ))
 
     for i, b in enumerate([beta1, beta2, beta3]):
         fig.add_trace(go.Scatter(
-            x=[xs[i], xs[i+1]],
-            y=[ys[i], ys[i+1]],
+            x=[xs[i], xs[i+1]], y=[ys[i], ys[i+1]],
             mode="lines+text",
-            line=dict(width=5),
+            line=dict(width=6, color="#FDE68A"),
             text=["", f"β={b:.2f}"],
             textposition="top center",
+            textfont=dict(size=16, color="#FDE68A"),
             hoverinfo="skip"
         ))
 
     fig.update_xaxes(visible=False, range=[0, 1])
     fig.update_yaxes(visible=False, range=[0.2, 0.8])
     fig.update_layout(
-        height=380,
+        height=420,
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        title="Model SEM Simulasi"
+        title=dict(text="Model SEM Simulasi", font=dict(size=24, color="#FDE68A")),
+        margin=dict(l=20, r=20, t=70, b=30)
     )
-
     st.plotly_chart(fig, use_container_width=True)
-    st.dataframe(sem_table.round(3), use_container_width=True)
 
-
-# =========================================================
-# RE-AIM
-# =========================================================
 with tabs[4]:
     st.subheader("Analisis RE-AIM")
 
     reaim = pd.DataFrame({
-        "Domain RE-AIM": ["Reach", "Effectiveness", "Adoption", "Implementation", "Maintenance"],
-        "Sumber Data": ["S4", "S1 + S4", "S2 + S3", "S2 + S3 + S4", "S1 + S2 + S3 + S4"],
+        "Domain": ["Reach", "Effectiveness", "Adoption", "Implementation", "Maintenance"],
         "Skor": [
-            ringkas(dff["S4_Data_Pentadbiran"]),
-            ringkas(dff["Indeks_Outcome_Klien"]),
-            ringkas(dff["S2_PPsi_PPPsi"]),
-            ringkas(dff["Kapasiti_Organisasi"]),
-            ringkas(dff["Indeks_Keberkesanan_Bersepadu"])
-        ],
-        "Maksud": [
-            "Liputan capaian perkhidmatan berdasarkan rekod pentadbiran.",
-            "Perubahan outcome klien selepas intervensi.",
-            "Penerimaan dan penggunaan perkhidmatan oleh pegawai dan sistem.",
-            "Kualiti pelaksanaan, SOP, sumber dan kapasiti.",
-            "Kelestarian susulan, pemindahan ilmu dan penambahbaikan."
+            purata(dff["S4_Data_Pentadbiran"]),
+            purata(dff["Indeks_Outcome_Klien"]),
+            purata(dff["S2_PPsi_PPPsi"]),
+            purata(dff["Kapasiti_Organisasi"]),
+            purata(dff["Indeks_Keberkesanan_Bersepadu"])
         ]
     })
 
-    st.plotly_chart(plot_bar(reaim, "Domain RE-AIM", "Skor", "Skor RE-AIM Mengikut Pilihan Semasa"), use_container_width=True)
-    st.dataframe(reaim.round(2), use_container_width=True)
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=reaim["Skor"],
+        theta=reaim["Domain"],
+        fill="toself",
+        name="RE-AIM"
+    ))
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        template="plotly_dark",
+        height=520,
+        paper_bgcolor="rgba(0,0,0,0)",
+        title=dict(text="Radar RE-AIM Mengikut Pilihan Semasa", font=dict(color="#FDE68A", size=24))
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-
-# =========================================================
-# CMO
-# =========================================================
 with tabs[5]:
     st.subheader("Analisis CMO: Context–Mechanism–Outcome")
 
-    cmo = pd.DataFrame([
-        ["Beban kes tinggi", "Kapasiti pegawai terhad dan masa menunggu meningkat", "Outcome klien lebih perlahan", "K4 → K1", "S2 + S4"],
-        ["Akses lokasi mencabar", "Keperluan tele-kaunseling dan susulan digital", "Reach boleh meningkat", "K2 + K5", "S1 + S4"],
-        ["SOP dan rujukan jelas", "Koordinasi antara agensi lebih lancar", "Kualiti penyampaian meningkat", "K3", "S2 + S3"],
-        ["Hubungan terapeutik baik", "Klien lebih percaya dan kekal dalam sesi", "Kepuasan dan outcome meningkat", "K2 → K1", "S1"],
-    ], columns=["Konteks", "Mekanisme", "Outcome", "Konstruk", "Sumber Data"])
+    cmo = [
+        ("Beban Kes Tinggi", "Kapasiti pegawai terhad dan masa menunggu meningkat", "Outcome klien lebih perlahan", "S2 + S4"),
+        ("Akses Lokasi Mencabar", "Keperluan tele-kaunseling dan susulan digital", "Reach perkhidmatan boleh meningkat", "S1 + S4"),
+        ("SOP Rujukan Jelas", "Koordinasi antara agensi lebih lancar", "Kualiti penyampaian meningkat", "S2 + S3"),
+        ("Hubungan Terapeutik Baik", "Klien lebih percaya dan kekal dalam sesi", "Kepuasan dan outcome meningkat", "S1"),
+    ]
 
-    st.dataframe(cmo, use_container_width=True)
+    for context, mechanism, outcome, source in cmo:
+        st.markdown(f"""
+        <div class="panel">
+        <h3>{context}</h3>
+        <b>Mekanisme:</b> {mechanism}<br>
+        <b>Outcome:</b> {outcome}<br>
+        <b>Sumber Data:</b> {source}
+        </div>
+        """, unsafe_allow_html=True)
 
-
-# =========================================================
-# PEMETAAN K-S-TEORI
-# =========================================================
 with tabs[6]:
     st.subheader("Pemetaan Konstruk, Sumber Data, Instrumen dan Teori")
 
     st.markdown("### Pemetaan Konstruk K1-K5")
     st.dataframe(K_SOURCE_MAP, use_container_width=True)
 
-    st.markdown("### Pemetaan Result Sistem kepada Questionnaire, Sumber, Konstruk dan Teori")
+    st.markdown("### Pemetaan Result Sistem")
     st.dataframe(RESULT_SOURCE_MAP, use_container_width=True)
 
-
-# =========================================================
-# SIMULASI DASAR
-# =========================================================
 with tabs[7]:
     st.subheader("Simulasi Dasar dan Penambahbaikan")
 
-    tambah_pegawai = st.slider("Simulasi penambahan kapasiti pegawai (%)", 0, 30, 10)
-    tambah_latihan = st.slider("Simulasi peningkatan latihan dan kompetensi (%)", 0, 30, 10)
-    tambah_digital = st.slider("Simulasi pendigitalan susulan / tele-kaunseling (%)", 0, 30, 10)
+    a, b, c = st.columns(3)
+    with a:
+        tambah_pegawai = st.slider("Penambahan kapasiti pegawai (%)", 0, 30, 10)
+    with b:
+        tambah_latihan = st.slider("Peningkatan latihan (%)", 0, 30, 10)
+    with c:
+        tambah_digital = st.slider("Pendigitalan susulan (%)", 0, 30, 10)
 
-    base = ringkas(dff["Indeks_Keberkesanan_Bersepadu"])
+    base = purata(dff["Indeks_Keberkesanan_Bersepadu"])
     simulated = np.clip(base + tambah_pegawai * 0.20 + tambah_latihan * 0.25 + tambah_digital * 0.18, 0, 100)
 
     c1, c2 = st.columns(2)
     with c1:
-        kpi("Indeks Semasa", f"{base:.1f}%", "Berdasarkan data simulasi")
+        kpi("Indeks Semasa", f"{base:.1f}%", "Sebelum simulasi dasar")
     with c2:
         kpi("Indeks Selepas Simulasi", f"{simulated:.1f}%", "Anggaran impak dasar")
 
@@ -655,8 +712,9 @@ with tabs[7]:
             "Memperkemas SOP rujukan antara agensi",
         ],
         "Keutamaan": ["Tinggi", "Tinggi", "Sederhana", "Sederhana"],
-        "Sumber Data Menyokong": ["S2 + S4", "S2 + S3", "S1 + S4", "S2 + S3"],
+        "Sumber Data": ["S2 + S4", "S2 + S3", "S1 + S4", "S2 + S3"],
         "Konstruk": ["K4", "K3 + K4", "K2 + K5", "K3"],
     })
 
-    st.dataframe(policy, use_container_width=True)
+    with st.expander("Lihat matriks cadangan dasar"):
+        st.dataframe(policy, use_container_width=True)
