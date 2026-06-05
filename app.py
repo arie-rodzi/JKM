@@ -11,49 +11,168 @@ st.set_page_config(
 )
 
 # =========================================================
-# GAYA PAPARAN
+# GAYA PAPARAN PREMIUM
 # =========================================================
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
 .stApp {
-    background: linear-gradient(135deg, #071526 0%, #0B2545 45%, #123C69 100%);
+    background:
+        radial-gradient(circle at top left, rgba(253, 230, 138, 0.20), transparent 32%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 30%),
+        linear-gradient(135deg, #030712 0%, #071526 38%, #0B2545 72%, #123C69 100%);
     color: white;
 }
+
+.block-container {
+    padding-top: 1.4rem;
+    padding-bottom: 3rem;
+    max-width: 1450px;
+}
+
+.hero-box {
+    padding: 34px 38px;
+    border-radius: 32px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)),
+        linear-gradient(90deg, rgba(253,230,138,0.16), rgba(14,165,233,0.08));
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 28px 80px rgba(0,0,0,0.42);
+    margin-bottom: 26px;
+}
+
 .main-title {
-    font-size: 38px;
-    font-weight: 900;
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 950;
+    letter-spacing: -1.2px;
     color: #FDE68A;
-    text-align: center;
+    text-shadow: 0 0 30px rgba(253,230,138,0.28);
 }
+
 .sub-title {
-    font-size: 18px;
-    color: #E0F2FE;
-    text-align: center;
-    margin-bottom: 25px;
-}
-.kpi-card {
-    padding: 22px;
-    border-radius: 22px;
-    background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
-    border: 1px solid rgba(255,255,255,0.22);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-}
-.kpi-label {
+    font-size: 17px;
     color: #DDEBFF;
-    font-size: 14px;
-    font-weight: 600;
+    margin-top: 12px;
+    max-width: 980px;
 }
+
+.badge-row {
+    margin-top: 22px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.58);
+    border: 1px solid rgba(253,230,138,0.38);
+    color: #FDE68A;
+    font-weight: 700;
+    font-size: 13px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.kpi-card {
+    min-height: 150px;
+    padding: 22px 22px 20px 22px;
+    border-radius: 28px;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.20), rgba(255,255,255,0.055)),
+        radial-gradient(circle at top right, rgba(253,230,138,0.23), transparent 38%);
+    border: 1px solid rgba(255,255,255,0.24);
+    box-shadow:
+        0 22px 48px rgba(0,0,0,0.34),
+        inset 0 1px 0 rgba(255,255,255,0.22);
+    transition: all 0.25s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 28px 65px rgba(0,0,0,0.42);
+    border-color: rgba(253,230,138,0.55);
+}
+
+.kpi-label {
+    color: #E0F2FE;
+    font-size: 13px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .55px;
+}
+
 .kpi-value {
     color: #FDE68A;
-    font-size: 32px;
+    font-size: 39px;
+    font-weight: 950;
+    margin-top: 10px;
+    line-height: 1;
+}
+
+.kpi-note {
+    color: #BBF7D0;
+    font-size: 13px;
+    font-weight: 650;
+    margin-top: 12px;
+}
+
+.info-box {
+    padding: 20px 24px;
+    border-radius: 24px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.055));
+    border: 1px solid rgba(255,255,255,0.20);
+    border-left: 6px solid #FDE68A;
+    box-shadow: 0 18px 38px rgba(0,0,0,0.26);
+    margin: 16px 0 22px 0;
+    color: #EAF6FF;
+}
+
+.section-card {
+    padding: 24px;
+    border-radius: 26px;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 18px 45px rgba(0,0,0,0.28);
+    margin-bottom: 20px;
+}
+
+h1, h2, h3 {
+    color: #FDE68A !important;
+    font-weight: 900 !important;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 999px;
+    padding: 10px 18px;
+    background: rgba(255,255,255,0.08);
+    color: #E0F2FE;
+    border: 1px solid rgba(255,255,255,0.14);
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #FDE68A, #F59E0B) !important;
+    color: #111827 !important;
     font-weight: 900;
 }
-.info-box {
-    padding: 18px;
+
+[data-testid="stMetricValue"] {
+    color: #FDE68A;
+}
+
+.stDataFrame {
     border-radius: 18px;
-    background: rgba(255,255,255,0.10);
-    border-left: 5px solid #FDE68A;
-    margin-bottom: 15px;
+    overflow: hidden;
 }
 </style>
 """, unsafe_allow_html=True)
