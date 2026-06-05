@@ -1,4 +1,6 @@
-import streamlit as st
+from pathlib import Path
+
+code = r'''import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -136,6 +138,17 @@ footer {visibility: hidden;}
     margin-bottom: 18px;
 }
 
+.intervention-panel {
+    padding: 24px 26px;
+    border-radius: 28px;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.055)),
+        radial-gradient(circle at top right, rgba(253,230,138,0.16), transparent 45%);
+    border: 1px solid rgba(255,255,255,0.20);
+    box-shadow: 0 22px 56px rgba(0,0,0,0.33);
+    margin-bottom: 18px;
+}
+
 .info-box {
     padding: 18px 22px;
     border-radius: 24px;
@@ -155,6 +168,30 @@ footer {visibility: hidden;}
     border: 1px solid rgba(253,230,138,0.25);
     color: #F8FAFC;
     min-height: 110px;
+}
+
+.priority-critical {
+    color: #991B1B;
+    background: #FEE2E2;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 900;
+}
+
+.priority-attention {
+    color: #92400E;
+    background: #FEF3C7;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 900;
+}
+
+.priority-good {
+    color: #14532D;
+    background: #DCFCE7;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 900;
 }
 
 h1, h2, h3 {
@@ -311,7 +348,7 @@ RESULT_SOURCE_MAP = pd.DataFrame([
 ], columns=["Result Sistem", "Questionnaire / Data Digunakan", "Sumber", "Konstruk", "Teori", "Bagaimana Sistem Kira / Jana Result"])
 
 # =========================================================
-# FUNGSI
+# FUNGSI ASAS
 # =========================================================
 def purata(x):
     return float(x.mean())
@@ -324,12 +361,6 @@ def kpi(label, value, note=""):
         <div class="kpi-note">{note}</div>
     </div>
     """, unsafe_allow_html=True)
-
-def panel_open():
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
-
-def panel_close():
-    st.markdown('</div>', unsafe_allow_html=True)
 
 def graf_bar(data, x, y, title):
     fig = px.bar(data, x=x, y=y, text_auto=".1f", title=title)
@@ -382,6 +413,157 @@ def pilih_data(df):
     return dff, zon, negeri
 
 # =========================================================
+# FUNGSI RUMUSAN INTERVENSI
+# =========================================================
+def kategori_tahap(skor):
+    if skor < 70:
+        return "Kritikal"
+    if skor < 80:
+        return "Perlu Perhatian"
+    return "Memuaskan tetapi boleh ditambah baik"
+
+def warna_tahap(tahap):
+    if tahap == "Kritikal":
+        return "#FCA5A5"
+    if tahap == "Perlu Perhatian":
+        return "#FDE68A"
+    return "#86EFAC"
+
+def css_tahap(tahap):
+    if tahap == "Kritikal":
+        return "priority-critical"
+    if tahap == "Perlu Perhatian":
+        return "priority-attention"
+    return "priority-good"
+
+def kamus_intervensi(isu):
+    bank = {
+        "Kepuasan Klien": {
+            "sumber": "S1",
+            "konstruk": "K1 + K2",
+            "dapatan": "Tahap kepuasan klien lebih rendah berbanding komponen lain. Isu ini lazimnya berkait dengan pengalaman sesi, komunikasi, tempoh menunggu, layanan, kefahaman klien terhadap proses dan ruang maklum balas.",
+            "intervensi": "Perkukuh komunikasi sesi, penerangan hak klien, pengurusan temu janji, pengalaman kaunter, dan sistem maklum balas selepas sesi.",
+            "tindakan": "Audit pengalaman klien; borang maklum balas ringkas selepas sesi; latihan komunikasi empati; semakan tempoh menunggu; saluran aduan dan maklum balas digital.",
+            "output": "Peningkatan skor kepuasan klien, pengurangan aduan, dan peningkatan kepercayaan klien terhadap perkhidmatan."
+        },
+        "Outcome Klien": {
+            "sumber": "S1 + S4",
+            "konstruk": "K1",
+            "dapatan": "Perubahan outcome klien T1-T2-T3 masih rendah atau tidak stabil. Ini menunjukkan kesan intervensi belum cukup konsisten atau susulan T3 perlu diperkukuh.",
+            "intervensi": "Perkukuh pelan intervensi individu, susulan T3, pemantauan kes berisiko dan outcome tracking berasaskan indikator.",
+            "tindakan": "Outcome monitoring; sesi susulan wajib; review kes kompleks; senarai kes berisiko; semakan pencapaian WHODAS dan wellbeing mengikut masa.",
+            "output": "Outcome klien lebih stabil, penurunan masalah kefungsian, dan peningkatan kesejahteraan selepas intervensi."
+        },
+        "Mekanisme Perkhidmatan": {
+            "sumber": "S1 + S2",
+            "konstruk": "K2",
+            "dapatan": "Akses, responsif, hubungan terapeutik atau kesinambungan perkhidmatan perlu diperkukuh. Isu ini memberi kesan kepada kebolehcapaian dan pengekalan klien dalam perkhidmatan.",
+            "intervensi": "Tingkatkan akses temu janji, tele-kaunseling, sistem peringatan susulan dan standard komunikasi klien.",
+            "tindakan": "Sistem appointment digital; SMS/WhatsApp reminder; protokol susulan; slot fleksibel; pemantauan kes tidak hadir.",
+            "output": "Akses lebih cepat, kadar susulan meningkat, dan kesinambungan sesi lebih baik."
+        },
+        "Kualiti Penyampaian": {
+            "sumber": "S1 + S2 + S3",
+            "konstruk": "K3",
+            "dapatan": "Aspek SOP, koordinasi rujukan, komunikasi atau konsistensi penyampaian belum optimum. Ini boleh menyebabkan variasi kualiti antara lokasi dan pegawai.",
+            "intervensi": "Seragamkan SOP, latihan case management, audit kualiti perkhidmatan dan penyelarasan rujukan antara agensi.",
+            "tindakan": "Bengkel SOP; audit fail kes; meja rujukan antara agensi; checklist kualiti; penyeliaan berkala.",
+            "output": "Penyampaian lebih seragam, rujukan lebih tersusun, dan standard perkhidmatan meningkat."
+        },
+        "Kapasiti Organisasi": {
+            "sumber": "S2 + S3 + S4",
+            "konstruk": "K4",
+            "dapatan": "Kapasiti organisasi dari aspek beban kes, pegawai, latihan, kemudahan atau sistem rekod perlu dipertingkatkan. Isu ini lazimnya menjadi punca kepada kelemahan kualiti dan mekanisme perkhidmatan.",
+            "intervensi": "Tambah kapasiti pegawai, agihkan semula beban kes, tambah latihan CPD dan sediakan ruang sesi yang lebih kondusif.",
+            "tindakan": "Workload balancing; cadangan perjawatan; latihan CPD; semakan infrastruktur; dashboard beban kes; pelan sokongan pegawai.",
+            "output": "Beban kerja lebih seimbang, kapasiti penyampaian meningkat, dan risiko burnout pegawai berkurang."
+        },
+        "Data Pentadbiran": {
+            "sumber": "S4",
+            "konstruk": "K1 + K4 + K5",
+            "dapatan": "Data pentadbiran menunjukkan isu capaian, rekod, nisbah pegawai-klien, susulan atau pelaporan berkala. Ini menjejaskan kebolehan pengurusan memantau prestasi secara real-time.",
+            "intervensi": "Perkukuh sistem rekod, dashboard pemantauan, integrasi data dan mekanisme pelaporan berkala.",
+            "tindakan": "Dashboard bulanan; semakan data kes; KPI susulan negeri; standard definisi data; audit rekod; integrasi laporan.",
+            "output": "Data lebih kemas, pelaporan lebih pantas, dan keputusan pengurusan lebih berasaskan bukti."
+        }
+    }
+    return bank[isu]
+
+def jana_rumusan_intervensi(data):
+    negeri_list = sorted(data["Negeri"].unique())
+    rows = []
+
+    for negeri in negeri_list:
+        d = data[data["Negeri"] == negeri]
+
+        skor = {
+            "Kepuasan Klien": purata(d["Indeks_Kepuasan_Klien"]),
+            "Outcome Klien": purata(d["Indeks_Outcome_Klien"]),
+            "Mekanisme Perkhidmatan": purata(d["Mekanisme_Perkhidmatan"]),
+            "Kualiti Penyampaian": purata(d["Kualiti_Penyampaian"]),
+            "Kapasiti Organisasi": purata(d["Kapasiti_Organisasi"]),
+            "Data Pentadbiran": purata(d["S4_Data_Pentadbiran"]),
+        }
+
+        isu = min(skor, key=skor.get)
+        nilai_isu = skor[isu]
+        meta = kamus_intervensi(isu)
+        tahap = kategori_tahap(nilai_isu)
+
+        rows.append([
+            negeri,
+            d["Zon"].iloc[0],
+            round(purata(d["Indeks_Keberkesanan_Bersepadu"]), 1),
+            isu,
+            round(nilai_isu, 1),
+            tahap,
+            meta["sumber"],
+            meta["konstruk"],
+            meta["dapatan"],
+            meta["intervensi"],
+            meta["tindakan"],
+            meta["output"]
+        ])
+
+    return pd.DataFrame(rows, columns=[
+        "Negeri",
+        "Zon",
+        "Indeks Keberkesanan Bersepadu",
+        "Isu Dominan",
+        "Skor Isu",
+        "Tahap Keutamaan",
+        "Sumber Data",
+        "Konstruk",
+        "Rumusan Dapatan",
+        "Cadangan Intervensi",
+        "Tindakan Operasi",
+        "Output Dijangka"
+    ])
+
+def jana_rumusan_keseluruhan(data):
+    total_summary = pd.DataFrame({
+        "Indikator Keseluruhan": [
+            "Indeks Keberkesanan Bersepadu",
+            "Indeks Kepuasan Klien",
+            "Indeks Outcome Klien",
+            "Mekanisme Perkhidmatan",
+            "Kualiti Penyampaian",
+            "Kapasiti Organisasi",
+            "Data Pentadbiran"
+        ],
+        "Skor": [
+            purata(data["Indeks_Keberkesanan_Bersepadu"]),
+            purata(data["Indeks_Kepuasan_Klien"]),
+            purata(data["Indeks_Outcome_Klien"]),
+            purata(data["Mekanisme_Perkhidmatan"]),
+            purata(data["Kualiti_Penyampaian"]),
+            purata(data["Kapasiti_Organisasi"]),
+            purata(data["S4_Data_Pentadbiran"])
+        ]
+    })
+    return total_summary.sort_values("Skor").iloc[0], total_summary
+
+# =========================================================
 # HERO
 # =========================================================
 st.markdown("""
@@ -392,13 +574,15 @@ st.markdown("""
     </div>
     <div class="hero-subtitle">
         Sistem Analitik Simulasi Premium berasaskan TOR JKM: Konstruk K1-K5,
-        Sumber Data S1-S4, SEM, RE-AIM, CMO, analisis negeri, zon dan outcome T1-T2-T3.
+        Sumber Data S1-S4, SEM, RE-AIM, CMO, analisis negeri, zon, outcome T1-T2-T3
+        dan cadangan intervensi automatik mengikut isu dominan negeri.
     </div>
     <span class="badge">Data Simulasi Tender</span>
     <span class="badge">S1-S4 Triangulasi</span>
     <span class="badge">K1-K5 Konstruk</span>
     <span class="badge">SEM Analisis Utama</span>
     <span class="badge">RE-AIM & CMO</span>
+    <span class="badge">Intervensi Negeri</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -410,7 +594,7 @@ dff, zon_pilih, negeri_pilih = pilih_data(df)
 st.markdown(f"""
 <div class="info-box">
 <b>Skop Paparan Semasa:</b> {zon_pilih} | {negeri_pilih}<br>
-Semua KPI, graf, SEM, RE-AIM, CMO dan jadual di bawah berubah mengikut penapis ini.
+Semua KPI, graf, SEM, RE-AIM, CMO, rumusan negeri dan cadangan intervensi berubah mengikut penapis ini.
 Data ini ialah <b>simulasi</b> untuk demonstrasi cadangan teknikal dan perlu diganti dengan data lapangan sebenar selepas kajian dilaksanakan.
 </div>
 """, unsafe_allow_html=True)
@@ -473,7 +657,7 @@ with i3:
     """, unsafe_allow_html=True)
 
 # =========================================================
-# TAB
+# TAB LENGKAP
 # =========================================================
 tabs = st.tabs([
     "Ringkasan Eksekutif",
@@ -482,6 +666,7 @@ tabs = st.tabs([
     "SEM",
     "RE-AIM",
     "CMO",
+    "Rumusan Negeri & Intervensi",
     "Pemetaan K-S-Teori",
     "Simulasi Dasar"
 ])
@@ -675,7 +860,142 @@ with tabs[5]:
         </div>
         """, unsafe_allow_html=True)
 
+# =========================================================
+# TAB BARU: RUMUSAN NEGERI & INTERVENSI
+# =========================================================
 with tabs[6]:
+    st.subheader("Rumusan Dapatan dan Cadangan Intervensi Mengikut Negeri")
+
+    rumusan = jana_rumusan_intervensi(dff)
+    isu_keseluruhan, total_summary = jana_rumusan_keseluruhan(dff)
+    meta_keseluruhan = kamus_intervensi(
+        "Data Pentadbiran" if isu_keseluruhan["Indikator Keseluruhan"] == "Data Pentadbiran"
+        else isu_keseluruhan["Indikator Keseluruhan"].replace("Indeks ", "").replace("Skor ", "")
+    ) if isu_keseluruhan["Indikator Keseluruhan"] in [
+        "Indeks Kepuasan Klien", "Indeks Outcome Klien", "Mekanisme Perkhidmatan",
+        "Kualiti Penyampaian", "Kapasiti Organisasi", "Data Pentadbiran"
+    ] else kamus_intervensi("Outcome Klien")
+
+    st.markdown(f"""
+    <div class="info-box">
+    Bahagian ini menjana rumusan automatik berdasarkan <b>skor terendah</b> bagi setiap negeri.
+    Sistem mengenal pasti isu dominan, sumber data yang menyokong dapatan, konstruk kajian yang terlibat,
+    cadangan intervensi, tindakan operasi dan output dijangka. Paparan semasa: 
+    <b>{zon_pilih}</b> | <b>{negeri_pilih}</b>.
+    </div>
+    """, unsafe_allow_html=True)
+
+    a, b, c, d = st.columns(4)
+    with a:
+        kpi("Jumlah Negeri Dianalisis", f"{rumusan['Negeri'].nunique()}", "Mengikut penapis semasa")
+    with b:
+        kpi("Purata Skor Isu Dominan", f"{rumusan['Skor Isu'].mean():.1f}%", "Lebih rendah = lebih perlu perhatian")
+    with c:
+        kpi("Isu Keseluruhan Terendah", isu_keseluruhan["Indikator Keseluruhan"], f"{isu_keseluruhan['Skor']:.1f}%")
+    with d:
+        kpi("Negeri Kritikal", f"{(rumusan['Tahap Keutamaan'] == 'Kritikal').sum()}", "Skor isu < 70%")
+
+    st.markdown(f"""
+    <div class="intervention-panel">
+    <h3>Rumusan Keseluruhan Sistem</h3>
+    Secara keseluruhan, komponen yang paling memerlukan perhatian ialah 
+    <b>{isu_keseluruhan['Indikator Keseluruhan']}</b> dengan skor 
+    <b>{isu_keseluruhan['Skor']:.1f}%</b>. 
+    Cadangan intervensi perlu dimulakan pada komponen ini sebelum diperluas kepada komponen lain.
+    <br><br>
+    <b>Cadangan Fokus:</b> {meta_keseluruhan['intervensi']}<br>
+    <b>Tindakan Operasi:</b> {meta_keseluruhan['tindakan']}
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns([1.15, 1])
+    with c1:
+        st.plotly_chart(
+            graf_bar(
+                rumusan.sort_values("Skor Isu"),
+                "Negeri",
+                "Skor Isu",
+                "Skor Isu Dominan Mengikut Negeri"
+            ),
+            use_container_width=True
+        )
+
+    with c2:
+        tahap_count = rumusan["Tahap Keutamaan"].value_counts().reset_index()
+        tahap_count.columns = ["Tahap Keutamaan", "Bilangan Negeri"]
+        st.plotly_chart(
+            graf_bar(
+                tahap_count,
+                "Tahap Keutamaan",
+                "Bilangan Negeri",
+                "Bilangan Negeri Mengikut Tahap Keutamaan"
+            ),
+            use_container_width=True
+        )
+
+    c3, c4 = st.columns([1, 1])
+    with c3:
+        isu_count = rumusan["Isu Dominan"].value_counts().reset_index()
+        isu_count.columns = ["Isu Dominan", "Bilangan Negeri"]
+        st.plotly_chart(
+            graf_bar(
+                isu_count,
+                "Isu Dominan",
+                "Bilangan Negeri",
+                "Taburan Isu Dominan Mengikut Negeri"
+            ),
+            use_container_width=True
+        )
+
+    with c4:
+        st.plotly_chart(
+            graf_bar(
+                total_summary.sort_values("Skor"),
+                "Indikator Keseluruhan",
+                "Skor",
+                "Skor Komponen Keseluruhan"
+            ),
+            use_container_width=True
+        )
+
+    st.markdown("### Jadual Ringkasan Intervensi Mengikut Negeri")
+    st.dataframe(rumusan, use_container_width=True)
+
+    csv = rumusan.to_csv(index=False).encode("utf-8-sig")
+    st.download_button(
+        "⬇️ Download Rumusan Intervensi CSV",
+        data=csv,
+        file_name="rumusan_intervensi_negeri.csv",
+        mime="text/csv"
+    )
+
+    st.markdown("### Kad Rumusan Negeri")
+
+    for _, row in rumusan.sort_values(["Tahap Keutamaan", "Skor Isu"]).iterrows():
+        warna = warna_tahap(row["Tahap Keutamaan"])
+        css = css_tahap(row["Tahap Keutamaan"])
+
+        st.markdown(f"""
+        <div class="intervention-panel" style="border-left: 8px solid {warna};">
+            <h3>{row['Negeri']} ({row['Zon']})</h3>
+            <span class="{css}">{row['Tahap Keutamaan']}</span>
+            <br><br>
+            <b>Indeks Keberkesanan Bersepadu:</b> {row['Indeks Keberkesanan Bersepadu']}%<br>
+            <b>Isu Dominan:</b> {row['Isu Dominan']} ({row['Skor Isu']}%)<br>
+            <b>Sumber Data:</b> {row['Sumber Data']}<br>
+            <b>Konstruk:</b> {row['Konstruk']}<br><br>
+            <b>Rumusan Dapatan:</b><br>
+            {row['Rumusan Dapatan']}<br><br>
+            <b>Cadangan Intervensi:</b><br>
+            {row['Cadangan Intervensi']}<br><br>
+            <b>Tindakan Operasi:</b><br>
+            {row['Tindakan Operasi']}<br><br>
+            <b>Output Dijangka:</b><br>
+            {row['Output Dijangka']}
+        </div>
+        """, unsafe_allow_html=True)
+
+with tabs[7]:
     st.subheader("Pemetaan Konstruk, Sumber Data, Instrumen dan Teori")
 
     st.markdown("### Pemetaan Konstruk K1-K5")
@@ -684,7 +1004,7 @@ with tabs[6]:
     st.markdown("### Pemetaan Result Sistem")
     st.dataframe(RESULT_SOURCE_MAP, use_container_width=True)
 
-with tabs[7]:
+with tabs[8]:
     st.subheader("Simulasi Dasar dan Penambahbaikan")
 
     a, b, c = st.columns(3)
@@ -718,3 +1038,8 @@ with tabs[7]:
 
     with st.expander("Lihat matriks cadangan dasar"):
         st.dataframe(policy, use_container_width=True)
+'''
+
+path = Path("/mnt/data/app.py")
+path.write_text(code, encoding="utf-8")
+print(f"Created {path} ({path.stat().st_size:,} bytes)")
