@@ -258,7 +258,7 @@ st.markdown("""
 <div class='hero'>
   <span class='badge'>TOR-ALIGNED • SEM-BASED • SIMULATION DEMO</span>
   <div class='hero-title'>Kajian Penilaian Keberkesanan <span class='gold'>Perkhidmatan Psikologi & Kaunseling JKM</span></div>
-  <div class='hero-subtitle'>Premium Streamlit dashboard untuk demonstrasi tender: analisis negeri/zon, outcome longitudinal T1–T2–T3, SEM, model sokongan, RE-AIM, CMO, polisi dan simulasi senario. Semua nilai dalam demo ialah data simulasi dan perlu diganti dengan data lapangan sebenar.</div>
+  <div class='hero-subtitle'>Dashboard untuk demonstrasi tender: analisis negeri/zon, outcome longitudinal T1–T2–T3, SEM, model sokongan, RE-AIM, CMO, polisi dan simulasi senario. Semua nilai dalam demo ialah data simulasi dan perlu diganti dengan data lapangan sebenar.</div>
 </div>
 """, unsafe_allow_html=True)
 
