@@ -288,7 +288,7 @@ def kpi(label, value, note=""):
     <div class="kpi-card">
         <div class="kpi-label">{label}</div>
         <div class="kpi-value">{value}</div>
-        <div style="color:#D1FAE5;font-size:13px;">{note}</div>
+        <div class="kpi-note">{note}</div>
     </div>
     """, unsafe_allow_html=True)
 
