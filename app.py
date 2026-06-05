@@ -63,30 +63,188 @@ INTERVENTIONS = ["Kaunseling Individu", "Kaunseling Kelompok", "Intervensi Krisi
 # =========================================================
 # TOR MAPPING: Konstruk (K), Sumber Data (S), Instrumen, Teori
 # =========================================================
+
 K_SOURCE_MAP = pd.DataFrame([
-    ["K1", "Outcome Klien / Keberkesanan", "S1 + S4", "Manual Instrumen Teras Hasil Klien JKM + CASRS-JKM + data pentadbiran", "WHODAS T1/T2/T3; WHOQOL/Wellbeing T1/T2/T3; WAI-SR; CSQ-8; PCL-5 selektif; rekod susulan", "Realist Evaluation; RE-AIM; Bronfenbrenner", "Client_Outcome_Index; WHODAS improvement; Wellbeing improvement; PCL-5 reduction; Satisfaction"],
-    ["K2", "Mekanisme Perkhidmatan", "S1 + S2", "CASRS-JKM + IPKJ-JKM", "Akses fizikal/prosedur; komunikasi; responsif relasi; aliansi terapeutik; etika; susulan; modaliti intervensi", "Realist Evaluation (CMO); WHO Person-Centred Approach", "Service_Mechanism; Access_Responsiveness; WAI_Alliance"],
-    ["K3", "Kualiti Penyampaian", "S2 + S3", "IPKJ-JKM Instrumen A/B + soal selidik warga JKM", "SOP; kompetensi; etika; kerahsiaan; kualiti intervensi; koordinasi rujukan", "Donabedian Model; WHO Person-Centred Approach", "Service_Quality; SOP_Compliance; Referral_Coordination"],
-    ["K4", "Kapasiti Organisasi", "S2 + S3 + S4", "IPKJ-JKM Instrumen B + warga JKM + data pentadbiran", "Perjawatan; beban kes; kemudahan; latihan; peruntukan; sistem rekod; burnout", "Donabedian Model; RE-AIM Implementation/Maintenance", "Organizational_Capacity; workload; waiting days; follow-up readiness"],
-    ["K5", "Penambahbaikan & Inovasi", "S1 + S2 + S3 + S4", "Soalan terbuka CASRS/IPKJ + temu bual + data pentadbiran", "Cadangan klien; cadangan pegawai; isu sistemik; peluang digital; tele-kaunseling; SOP digital", "RE-AIM Maintenance; Realist Evaluation; CMO", "Policy recommendation; priority matrix; scenario simulator"],
-], columns=["K", "Konstruk", "Sumber Data", "Instrumen / Questionnaire", "Item / Domain Digunakan", "Theory / Framework", "Result Dalam Sistem"])
+    [
+        "K1",
+        "Outcome Klien / Keberkesanan",
+        "S1 + S4",
+        "Manual Instrumen Teras Hasil Klien JKM + CASRS-JKM + data pentadbiran",
+        "WHODAS T1/T2/T3; WHOQOL/Wellbeing T1/T2/T3; WAI-SR; CSQ-8; PCL-5 selektif; rekod susulan; status kes",
+        "Realist Evaluation; RE-AIM Effectiveness; Bronfenbrenner",
+        "Client Outcome Index; WHODAS Improvement; Wellbeing Improvement; PCL-5 Reduction; Client Satisfaction"
+    ],
+    [
+        "K2",
+        "Mekanisme Perkhidmatan",
+        "S1 + S2",
+        "CASRS-JKM + IPKJ-JKM Instrumen A",
+        "Akses fizikal; akses prosedural; komunikasi; responsif relasi; aliansi terapeutik; etika; susulan; kesesuaian modaliti intervensi",
+        "Realist Evaluation (CMO); WHO Person-Centred Approach",
+        "Service Mechanism Score; Access Responsiveness; Therapeutic Alliance"
+    ],
+    [
+        "K3",
+        "Kualiti Penyampaian",
+        "S1 + S2 + S3",
+        "CASRS-JKM + IPKJ-JKM Instrumen A/B + soal selidik warga JKM",
+        "SOP; kompetensi; etika; kerahsiaan; kualiti intervensi; komunikasi; koordinasi rujukan; profesionalisme pegawai",
+        "Donabedian Process; WHO Person-Centred Approach",
+        "Service Quality Score; SOP Compliance; Referral Coordination; Communication Quality"
+    ],
+    [
+        "K4",
+        "Kapasiti Organisasi",
+        "S2 + S3 + S4",
+        "IPKJ-JKM Instrumen B + soal selidik warga JKM + data pentadbiran",
+        "Perjawatan; beban kes; kemudahan; latihan; peruntukan; sistem rekod; burnout; nisbah pegawai-klien; tempoh menunggu",
+        "Donabedian Structure; RE-AIM Implementation/Maintenance",
+        "Organizational Capacity Index; Workload Index; Waiting Time; Follow-up Readiness"
+    ],
+    [
+        "K5",
+        "Penambahbaikan & Inovasi",
+        "S1 + S2 + S3 + S4",
+        "Soalan terbuka CASRS/IPKJ + temu bual + data pentadbiran",
+        "Cadangan klien; cadangan pegawai; isu sistemik; peluang digital; tele-kaunseling; SOP digital; keperluan latihan; keperluan sumber",
+        "RE-AIM Maintenance; Realist Evaluation; CMO",
+        "Policy Recommendation Matrix; Priority Action Plan; Scenario Simulator"
+    ],
+], columns=[
+    "K",
+    "Konstruk",
+    "Sumber Data",
+    "Instrumen / Questionnaire",
+    "Item / Domain Digunakan",
+    "Theory / Framework",
+    "Result Dalam Sistem"
+])
+
 
 S_SOURCE_MAP = pd.DataFrame([
-    ["S1", "Klien", "CASRS-JKM + Manual Outcome Klien", "≈450 kuantitatif + ≈45 kualitatif", "K1, K2, K5", "Kepuasan, outcome, akses, responsif, aliansi, T1-T2-T3"],
-    ["S2", "PPsi + PPPsi", "IPKJ-JKM Instrumen A & B", "≈75 kuantitatif + ≈25 kualitatif", "K2, K3, K4, K5", "Kapasiti, SOP, kompetensi, beban kerja, latihan, halangan intervensi"],
-    ["S3", "Warga JKM", "Soal selidik sokongan sistem + temu bual", "≈75 kuantitatif + ≈15 kualitatif", "K3, K4, K5", "Sokongan organisasi, rujukan, koordinasi, pandangan sistem"],
-    ["S4", "Data Pentadbiran JKM", "Rekod kes, statistik intervensi, laporan, data sumber manusia", "Bukan responden", "K1, K4, K5", "Reach, trend intervensi, beban kes, nisbah pegawai-klien, susulan"],
-], columns=["S", "Sumber", "Instrumen / Data", "Anggaran Sampel", "Konstruk Disokong", "Output Dashboard"])
+    [
+        "S1",
+        "Klien",
+        "CASRS-JKM + Manual Instrumen Teras Hasil Klien JKM",
+        "≈450 kuantitatif + ≈45 kualitatif",
+        "K1, K2, K3, K5",
+        "Client Satisfaction; Client Outcome; Access; Responsiveness; Therapeutic Alliance; T1-T2-T3 Improvement"
+    ],
+    [
+        "S2",
+        "PPsi + PPPsi",
+        "IPKJ-JKM Instrumen A & B",
+        "≈75 kuantitatif + ≈25 kualitatif",
+        "K2, K3, K4, K5",
+        "Intervention Success; SOP; Competency; Workload; Training; Burnout; Service Barrier"
+    ],
+    [
+        "S3",
+        "Warga JKM",
+        "Soal selidik sokongan sistem + temu bual",
+        "≈75 kuantitatif + ≈15 kualitatif",
+        "K3, K4, K5",
+        "Organisational Support; Referral Coordination; Internal Collaboration; System Readiness"
+    ],
+    [
+        "S4",
+        "Data Pentadbiran JKM",
+        "Rekod kes, statistik intervensi, laporan tahunan, data sumber manusia, rekod susulan",
+        "Bukan responden",
+        "K1, K4, K5",
+        "Reach; Intervention Trend; Officer-Client Ratio; Case Load; Follow-up Rate; Waiting Time"
+    ],
+], columns=[
+    "S",
+    "Sumber",
+    "Instrumen / Data",
+    "Anggaran Sampel",
+    "Konstruk Disokong",
+    "Output Dashboard"
+])
+
 
 RESULT_SOURCE_MAP = pd.DataFrame([
-    ["Overall Satisfaction", "CSQ-8 / kepuasan CASRS", "S1", "K1 + K2", "WHO Person-Centred; Realist Evaluation", "Purata skor kepuasan klien ditukar kepada indeks 0-100; dibanding ikut negeri, zon dan kategori klien."],
-    ["Overall Effectiveness / Client Outcome Index", "WHODAS, WHOQOL/Wellbeing, WAI-SR, CSQ-8, PCL-5 selektif", "S1 + S4", "K1", "RE-AIM Effectiveness; Realist CMO", "Gabungan perubahan T1-T2-T3: WHODAS menurun = baik, Wellbeing meningkat = baik, PCL-5 menurun = baik, WAI/CSQ tinggi = baik."],
-    ["Service Quality Score", "IPKJ-JKM + CASRS domain etika/komunikasi", "S2 + S3 + S1", "K3", "Donabedian Process; WHO Person-Centred", "Purata SOP, kompetensi, etika, kerahsiaan, rujukan dan komunikasi."],
-    ["Organizational Capacity", "IPKJ-JKM Instrumen B + data pentadbiran", "S2 + S3 + S4", "K4", "Donabedian Structure; RE-AIM Implementation", "Gabungan beban kes, perjawatan, kemudahan, latihan, sistem rekod dan peruntukan."],
-    ["SEM Path Coefficient", "Skor konstruk teragregat daripada CASRS, IPKJ, outcome longitudinal", "S1 + S2 + S3 + S4", "K1-K4", "Realist CMO + Donabedian", "Menguji hubungan Capacity → Quality → Mechanism → Outcome; bukan daripada satu questionnaire sahaja."],
-    ["RE-AIM Score", "Data pentadbiran + outcome + IPKJ + temu bual", "S1 + S2 + S3 + S4", "K1-K5", "RE-AIM", "Reach daripada rekod; Effectiveness daripada outcome; Adoption/Implementation daripada pegawai; Maintenance daripada susulan dan kualitatif."],
-    ["CMO Finding", "Temu bual dan soalan terbuka", "S1 + S2 + S3", "K2 + K5", "Realist Evaluation", "Menjawab: dalam konteks apa, melalui mekanisme apa, outcome apa berlaku."],
-], columns=["Result Sistem", "Questionnaire / Data Digunakan", "Sumber", "Konstruk", "Theory", "Bagaimana Sistem Kira / Jana Result"])
+    [
+        "Client Satisfaction Index",
+        "CASRS-JKM + CSQ-8",
+        "S1",
+        "K1 + K2",
+        "WHO Person-Centred; Realist Evaluation",
+        "Dikira daripada skor kepuasan klien, pengalaman perkhidmatan, komunikasi, layanan, akses dan CSQ-8. Skor ditukar kepada indeks 0-100 dan dibandingkan mengikut negeri, zon serta kategori klien."
+    ],
+    [
+        "National Effectiveness Index",
+        "CASRS-JKM + Manual Outcome Klien + IPKJ-JKM + Warga JKM + data pentadbiran",
+        "S1 + S2 + S3 + S4",
+        "K1 + K2 + K3 + K4 + K5",
+        "Realist Evaluation; Donabedian; RE-AIM",
+        "Indeks komposit nasional yang menggabungkan outcome klien, mekanisme perkhidmatan, kualiti penyampaian, kapasiti organisasi dan data prestasi pentadbiran. Ini bukan daripada satu questionnaire sahaja."
+    ],
+    [
+        "Client Outcome Index",
+        "WHODAS, WHOQOL/Wellbeing, WAI-SR, CSQ-8, PCL-5 selektif, rekod susulan",
+        "S1 + S4",
+        "K1",
+        "RE-AIM Effectiveness; Realist CMO",
+        "Dikira melalui perubahan T1-T2-T3: WHODAS menurun dianggap baik, Wellbeing meningkat dianggap baik, PCL-5 menurun dianggap baik, manakala WAI-SR dan CSQ-8 yang tinggi menunjukkan outcome positif."
+    ],
+    [
+        "Service Mechanism Score",
+        "CASRS-JKM + IPKJ-JKM Instrumen A",
+        "S1 + S2",
+        "K2",
+        "Realist Evaluation CMO; WHO Person-Centred",
+        "Dikira daripada akses, prosedur, komunikasi, responsif relasi, aliansi terapeutik, susulan dan kesesuaian modaliti intervensi."
+    ],
+    [
+        "Service Quality Score",
+        "CASRS-JKM + IPKJ-JKM + soal selidik warga JKM",
+        "S1 + S2 + S3",
+        "K3",
+        "Donabedian Process; WHO Person-Centred",
+        "Dikira daripada SOP, kompetensi, etika, kerahsiaan, kualiti intervensi, komunikasi dan koordinasi rujukan."
+    ],
+    [
+        "Organizational Capacity Index",
+        "IPKJ-JKM Instrumen B + warga JKM + data pentadbiran",
+        "S2 + S3 + S4",
+        "K4",
+        "Donabedian Structure; RE-AIM Implementation",
+        "Dikira daripada beban kes, perjawatan, kemudahan, latihan, sistem rekod, peruntukan, burnout, nisbah pegawai-klien dan tempoh menunggu."
+    ],
+    [
+        "SEM Path Coefficient",
+        "Skor konstruk teragregat daripada CASRS, IPKJ, outcome longitudinal dan data pentadbiran",
+        "S1 + S2 + S3 + S4",
+        "K1-K4",
+        "Realist CMO + Donabedian",
+        "Menguji hubungan Capacity → Quality → Mechanism → Outcome. Model ini menggabungkan pelbagai sumber data dan bukan bergantung kepada satu set questionnaire sahaja."
+    ],
+    [
+        "RE-AIM Score",
+        "Data pentadbiran + outcome klien + IPKJ + temu bual",
+        "S1 + S2 + S3 + S4",
+        "K1-K5",
+        "RE-AIM",
+        "Reach daripada rekod pentadbiran; Effectiveness daripada outcome klien; Adoption daripada pegawai/warga JKM; Implementation daripada IPKJ; Maintenance daripada susulan dan dapatan kualitatif."
+    ],
+    [
+        "CMO Finding",
+        "Temu bual, soalan terbuka CASRS/IPKJ dan data sokongan sistem",
+        "S1 + S2 + S3",
+        "K2 + K5",
+        "Realist Evaluation",
+        "Menjawab: dalam konteks apa, melalui mekanisme apa, outcome apa berlaku. Digunakan untuk menjana dapatan kualitatif dan cadangan penambahbaikan."
+    ],
+], columns=[
+    "Result Sistem",
+    "Questionnaire / Data Digunakan",
+    "Sumber",
+    "Konstruk",
+    "Theory",
+    "Bagaimana Sistem Kira / Jana Result"
+])
 
 
 def zone_from_state(s):
