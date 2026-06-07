@@ -3,9 +3,12 @@ import pandas as pd
 import numpy as np
 import altair as alt
 from datetime import datetime
-import html
 import re
-from pathlib import Path
+import html
+
+# ============================================================
+# CONFIG
+# ============================================================
 
 st.set_page_config(
     page_title="JKM Psychological Services DSS-IIS",
@@ -16,22 +19,20 @@ st.set_page_config(
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin2026"
-DEFAULT_FILES = [
-    "JKM_7Sheet_Full_Simulation_Raw_Data(1).xlsx",
-    "JKM_7Sheet_Full_Simulation_Raw_Data(2).xlsx",
-    "JKM_7Sheet_Full_Simulation_Raw_Data.xlsx",
-]
+DEFAULT_FILE = "JKM_7Sheet_Full_Simulation_Raw_Data(2).xlsx"
 
-# =====================================================
-# CSS PREMIUM + HIDE SIDEBAR + TRANSPARENT CHART
-# =====================================================
+# ============================================================
+# CSS STYLE
+# ============================================================
+
 st.markdown("""
 <style>
-[data-testid="stSidebar"] {display:none !important;}
-[data-testid="collapsedControl"] {display:none !important;}
-#MainMenu {visibility:hidden;}
-footer {visibility:hidden;}
-header {visibility:hidden;}
+[data-testid="stSidebar"] {display:none;}
+[data-testid="collapsedControl"] {display:none;}
+
+html, body, [class*="css"] {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
 
 .stApp {
     background:
@@ -44,28 +45,34 @@ header {visibility:hidden;}
 
 .block-container {
     padding-top: 1.2rem;
-    padding-bottom: 3rem;
+    padding-bottom: 4rem;
     max-width: 1550px;
 }
 
-.hero, .section, .filter-card, .soft-card {
+.hero, .section, .filter-card {
     border-radius: 28px;
-    background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,255,255,.055));
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,255,255,.055));
     border: 1px solid rgba(255,255,255,.20);
     box-shadow: 0 22px 70px rgba(0,0,0,.32);
     margin-bottom: 18px;
-    backdrop-filter: blur(18px);
 }
 
-.hero {padding: 34px 38px;}
-.section, .filter-card, .soft-card {padding: 24px;}
+.hero {
+    padding: 34px 38px;
+}
+
+.section, .filter-card {
+    padding: 24px;
+}
 
 .hero h1 {
     font-size: 2.25rem;
     margin: 0;
-    color: #ffffff;
-    letter-spacing: -.5px;
+    color: white;
+    letter-spacing: -0.5px;
 }
+
 .hero p {
     color: #dbeafe;
     font-size: 1.02rem;
@@ -73,423 +80,676 @@ header {visibility:hidden;}
     line-height: 1.55;
 }
 
-.kpi {
-    padding: 22px;
+.chart-card {
+    padding: 18px;
     border-radius: 24px;
-    min-height: 138px;
-    background: linear-gradient(135deg, rgba(255,255,255,.20), rgba(255,255,255,.07));
-    border: 1px solid rgba(255,255,255,.22);
-    box-shadow: 0 18px 45px rgba(0,0,0,.22);
-}
-.kpi .label {color:#cbd5e1; font-size:.86rem; font-weight:800; text-transform:uppercase; letter-spacing:.5px;}
-.kpi .value {color:#ffffff; font-size:2rem; font-weight:950; margin-top:8px;}
-.kpi .sub {color:#dbeafe; font-size:.82rem; margin-top:6px;}
-
-.note-blue, .audit-box, .intervention-box {
-    padding: 18px 20px;
-    border-radius: 20px;
-    color: #e0f2fe;
-    line-height: 1.55;
+    background:
+        radial-gradient(circle at top left, rgba(0,245,212,.16), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(255,77,109,.13), transparent 35%),
+        linear-gradient(135deg, rgba(6,24,38,.94), rgba(16,37,66,.88));
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow: 0 18px 55px rgba(0,0,0,.35);
     margin-top: 12px;
+    margin-bottom: 12px;
 }
-.note-blue {background:rgba(14,165,233,.13); border:1px solid rgba(125,211,252,.35);}
-.audit-box {background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.35); color:#fff7d6;}
-.intervention-box {background:rgba(0,245,212,.10); border:1px solid rgba(0,245,212,.30); color:#d9fffb;}
 
-/* Remove white chart background */
-div[data-testid="stAltairChart"],
-div[data-testid="stAltairChart"] > div,
-div[data-testid="stVegaLiteChart"],
-div[data-testid="stVegaLiteChart"] > div,
-canvas, iframe {
+div[data-testid="stVegaLiteChart"] {
     background: transparent !important;
 }
+
 .vega-embed, .vega-embed canvas, .vega-embed svg {
     background: transparent !important;
 }
 
-[data-testid="stDataFrame"] {
-    background: rgba(255,255,255,.06) !important;
-    border-radius: 18px;
+.kpi {
+    padding: 22px;
+    border-radius: 24px;
+    min-height: 140px;
+    background:
+        radial-gradient(circle at top right, rgba(254,228,64,.22), transparent 30%),
+        linear-gradient(135deg, rgba(255,255,255,.20), rgba(255,255,255,.07));
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: 0 18px 55px rgba(0,0,0,.30);
 }
 
-h1, h2, h3, h4, p, label, span, div {color: inherit;}
-.stSelectbox label, .stTextInput label, .stFileUploader label {color:#ffffff !important; font-weight:700;}
+.kpi .label {
+    color: #dbeafe;
+    font-size: .78rem;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+.kpi .value {
+    color: #ffffff;
+    font-size: 2.25rem;
+    font-weight: 950;
+    margin-top: 8px;
+}
+
+.kpi .sub {
+    color: #fee440;
+    font-size: .88rem;
+    margin-top: 4px;
+    font-weight: 800;
+}
+
+.audit {
+    margin-top: 10px;
+    padding: 15px 17px;
+    border-radius: 17px;
+    background: rgba(254, 228, 64, .15);
+    border-left: 5px solid #fee440;
+    color: #fffde7;
+    font-size: .93rem;
+    line-height: 1.55;
+}
+
+.note-blue {
+    margin-top: 10px;
+    padding: 15px 17px;
+    border-radius: 17px;
+    background: rgba(0, 245, 212, .13);
+    border-left: 5px solid #00f5d4;
+    color: #e0fffb;
+    font-size: .93rem;
+    line-height: 1.55;
+}
+
+.warning-box {
+    margin-top: 10px;
+    padding: 15px 17px;
+    border-radius: 17px;
+    background: rgba(255, 77, 109, .14);
+    border-left: 5px solid #ff4d6d;
+    color: #ffe3ea;
+    font-size: .93rem;
+    line-height: 1.55;
+}
+
+.intervention {
+    padding: 19px;
+    border-radius: 22px;
+    background:
+        linear-gradient(135deg, rgba(255,77,109,.20), rgba(0,245,212,.14));
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow: 0 16px 38px rgba(0,0,0,.20);
+    margin-bottom: 14px;
+}
+
+.good {color:#00f5d4;font-weight:900;}
+.warn {color:#fee440;font-weight:900;}
+.bad {color:#ff4d6d;font-weight:900;}
+
 .stButton button, .stDownloadButton button {
-    border-radius: 14px !important;
-    border: 1px solid rgba(255,255,255,.25) !important;
-    background: linear-gradient(135deg, #00f5d4, #ffd166) !important;
-    color: #07131f !important;
-    font-weight: 900 !important;
+    border-radius: 15px;
+    border: 0;
+    background: linear-gradient(135deg, #fee440, #ffb703);
+    color: #111827;
+    font-weight: 950;
+    padding: .75rem 1.15rem;
+}
+
+.stSelectbox label, .stFileUploader label, .stTextInput label, .stSlider label {
+    color: #ffffff !important;
+    font-weight: 900;
+}
+
+div[data-testid="stDataFrame"] {
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+hr {
+    border-color: rgba(255,255,255,.18);
 }
 </style>
 """, unsafe_allow_html=True)
 
-# =====================================================
+# ============================================================
 # HELPER FUNCTIONS
-# =====================================================
+# ============================================================
+
 def html_escape(x):
     return html.escape(str(x))
 
-@st.cache_data(show_spinner=False)
-def load_excel_cached(file_bytes, file_name):
-    return pd.read_excel(file_bytes, sheet_name=None)
 
-def load_excel(source):
-    if hasattr(source, "read"):
-        source.seek(0)
-        return load_excel_cached(source.getvalue(), source.name)
-    return pd.read_excel(source, sheet_name=None)
+def safe_mean(df, cols):
+    cols = [c for c in cols if c in df.columns]
+    if not cols:
+        return pd.Series(np.nan, index=df.index)
+    return df[cols].apply(pd.to_numeric, errors="coerce").mean(axis=1)
 
 
-def find_default_excel():
-    for file_name in DEFAULT_FILES:
-        if Path(file_name).exists():
-            return file_name
-    return None
+def cronbach_alpha(df_items):
+    df_items = df_items.apply(pd.to_numeric, errors="coerce").dropna(axis=1, how="all")
+    if df_items.shape[1] < 2:
+        return np.nan
 
-def clean_col(c):
-    c = str(c).strip()
-    c = re.sub(r"\s+", " ", c)
-    return c
+    df_items = df_items.fillna(df_items.mean(numeric_only=True))
+    item_var = df_items.var(axis=0, ddof=1).sum()
+    total_var = df_items.sum(axis=1).var(ddof=1)
+    k = df_items.shape[1]
 
-def find_col(df, candidates):
-    lower_map = {str(c).strip().lower(): c for c in df.columns}
+    if total_var == 0 or pd.isna(total_var):
+        return np.nan
+
+    return (k / (k - 1)) * (1 - item_var / total_var)
+
+
+def classify_score(score):
+    if pd.isna(score):
+        return "Tiada Data"
+    if score >= 4.0:
+        return "Baik / Kuat"
+    if score >= 3.4:
+        return "Sederhana / Perlu Pengukuhan"
+    return "Rendah / Perlu Intervensi"
+
+
+def detect_col(df, candidates):
+    lower_map = {str(c).lower().strip(): c for c in df.columns}
+
     for cand in candidates:
-        if cand.lower() in lower_map:
-            return lower_map[cand.lower()]
+        if cand.lower().strip() in lower_map:
+            return lower_map[cand.lower().strip()]
+
     for c in df.columns:
-        cl = str(c).strip().lower()
+        cl = str(c).lower()
         for cand in candidates:
             if cand.lower() in cl:
                 return c
+
     return None
+
+
+def get_cols_start(df, prefixes):
+    return [c for c in df.columns if any(str(c).startswith(p) for p in prefixes)]
+
+
+def get_item_cols(df):
+    out = []
+    for c in df.columns:
+        cs = str(c).strip()
+        if re.match(r"^(K\d+[A-Z]\d+|K\d+[A-Z]_\d+|SQ\d+|B\d+|T2_\d+|T3_\d+|K1O\d+)$", cs):
+            out.append(c)
+    return out
+
+
+def formula_text(name, cols):
+    if not cols:
+        return f"{name}: tiada item dikesan."
+    return f"{name} = ({' + '.join([str(c) for c in cols])}) / {len(cols)}"
+
+
+def show_audit(title, body):
+    st.markdown(f"""
+    <div class="audit">
+    <b>{html_escape(title)}</b><br>{body}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def show_note(title, body):
+    st.markdown(f"""
+    <div class="note-blue">
+    <b>{html_escape(title)}</b><br>{body}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def show_warning_box(title, body):
+    st.markdown(f"""
+    <div class="warning-box">
+    <b>{html_escape(title)}</b><br>{body}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+@st.cache_data(show_spinner=False)
+def load_excel(file):
+    xls = pd.ExcelFile(file)
+    return {s: pd.read_excel(file, sheet_name=s) for s in xls.sheet_names}
+
 
 def standardise_quant(sheets):
     frames = []
-    for sheet_name, raw in sheets.items():
-        if raw is None or raw.empty:
-            continue
-        df = raw.copy()
-        df.columns = [clean_col(c) for c in df.columns]
 
-        numeric_cols = []
-        for c in df.columns:
-            s = pd.to_numeric(df[c], errors="coerce")
-            if s.notna().sum() >= max(3, int(0.2 * len(df))):
-                if s.dropna().between(1, 5).mean() >= 0.60:
-                    numeric_cols.append(c)
-        if len(numeric_cols) < 2:
-            continue
+    sheet_map = {
+        "S1_Quant_Raw": "Klien",
+        "S2_Quant_Raw": "Pegawai",
+        "S3_Quant_Raw": "Warga JKM",
+        "T123_Pilot_Raw": "Klien"
+    }
 
-        zone_col = find_col(df, ["Zone", "Zon", "Wilayah"])
-        state_col = find_col(df, ["State", "Negeri", "Negeri Responden"])
-        type_col = find_col(df, ["Jenis Responden", "Type of Respondent", "Respondent Type", "Kategori Responden", "Jenis"])
-
-        if zone_col is None:
-            df["Zone"] = "Tidak dinyatakan"
-        else:
-            df["Zone"] = df[zone_col].fillna("Tidak dinyatakan").astype(str)
-
-        if state_col is None:
-            df["State"] = "Tidak dinyatakan"
-        else:
-            df["State"] = df[state_col].fillna("Tidak dinyatakan").astype(str)
-
-        if type_col is None:
-            df["Jenis Responden"] = sheet_name
-        else:
-            df["Jenis Responden"] = df[type_col].fillna(sheet_name).astype(str)
-
-        for c in numeric_cols:
-            df[c] = pd.to_numeric(df[c], errors="coerce")
-
-        df["Nama Sheet"] = sheet_name
-        frames.append(df)
+    for sheet_name, jenis in sheet_map.items():
+        if sheet_name in sheets:
+            temp = sheets[sheet_name].copy()
+            temp["Jenis Responden"] = jenis
+            temp["Kod Borang"] = {
+                "Klien": "S1",
+                "Pegawai": "S2",
+                "Warga JKM": "S3"
+            }.get(jenis, "NA")
+            temp["Sumber Data"] = sheet_name
+            frames.append(temp)
 
     if not frames:
         return pd.DataFrame()
-    return pd.concat(frames, ignore_index=True, sort=False)
+
+    df = pd.concat(frames, ignore_index=True, sort=False)
+
+    zone_col = detect_col(df, ["Zone", "Zon"])
+    state_col = detect_col(df, ["State", "Negeri"])
+
+    if zone_col and zone_col != "Zone":
+        df["Zone"] = df[zone_col]
+
+    if state_col and state_col != "State":
+        df["State"] = df[state_col]
+
+    if "Zone" not in df.columns:
+        df["Zone"] = "Tidak Dinyatakan"
+
+    if "State" not in df.columns:
+        df["State"] = "Tidak Dinyatakan"
+
+    return df
+
 
 def standardise_qual(sheets):
     frames = []
-    for sheet_name, raw in sheets.items():
-        if raw is None or raw.empty:
-            continue
-        df = raw.copy()
-        df.columns = [clean_col(c) for c in df.columns]
-        text_cols = []
-        for c in df.columns:
-            if df[c].dtype == "object":
-                avg_len = df[c].dropna().astype(str).str.len().mean()
-                if pd.notna(avg_len) and avg_len > 20:
-                    text_cols.append(c)
-        if not text_cols:
-            continue
-        zone_col = find_col(df, ["Zone", "Zon", "Wilayah"])
-        state_col = find_col(df, ["State", "Negeri"])
-        type_col = find_col(df, ["Jenis Responden", "Respondent Type", "Kategori Responden", "Jenis"])
-        out = pd.DataFrame()
-        out["Zone"] = df[zone_col].fillna("Tidak dinyatakan").astype(str) if zone_col else "Tidak dinyatakan"
-        out["State"] = df[state_col].fillna("Tidak dinyatakan").astype(str) if state_col else "Tidak dinyatakan"
-        out["Jenis Responden"] = df[type_col].fillna(sheet_name).astype(str) if type_col else sheet_name
-        out["Sumber Sheet"] = sheet_name
-        out["Teks"] = df[text_cols].astype(str).agg(" | ".join, axis=1)
-        frames.append(out)
-    return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
 
-def get_item_cols(df):
-    exclude = {"Zone", "State", "Jenis Responden", "Nama Sheet"}
-    item_cols = []
-    for c in df.columns:
-        if c in exclude:
-            continue
-        s = pd.to_numeric(df[c], errors="coerce")
-        if s.notna().sum() >= max(3, int(0.2 * len(df))):
-            if s.dropna().between(1, 5).mean() >= 0.60:
-                item_cols.append(c)
-    return item_cols
+    sheet_map = {
+        "Q1_Client_Raw": "Klien",
+        "Q2_Officer_Raw": "Pegawai",
+        "Q3_System_Raw": "Warga JKM"
+    }
 
-def build_construct_map(df, selected_type="Semua"):
-    item_cols = get_item_cols(df)
-    if not item_cols:
-        return {}
+    for sheet_name, jenis in sheet_map.items():
+        if sheet_name in sheets:
+            temp = sheets[sheet_name].copy()
+            temp["Jenis Responden"] = jenis
+            temp["Kod Borang"] = {
+                "Klien": "S1",
+                "Pegawai": "S2",
+                "Warga JKM": "S3"
+            }.get(jenis, "NA")
+            temp["Sumber Data"] = sheet_name
+            frames.append(temp)
 
-    groups = {}
-    for c in item_cols:
-        name = str(c).strip()
-        prefix = None
-        m = re.match(r"^([A-Za-z]+\s*\d*|[A-Za-z]+)[\._\-\s]*\d+", name)
-        if m:
-            prefix = m.group(1).strip().upper()
-        else:
-            parts = re.split(r"[\._\-\s]+", name)
-            prefix = parts[0].strip().upper() if parts else "ITEM"
-        groups.setdefault(prefix, []).append(c)
+    if not frames:
+        return pd.DataFrame()
 
-    # If too many tiny groups, use balanced automatic dimensions.
-    if len(groups) > 12 or any(len(v) == 1 for v in groups.values()):
-        chunks = np.array_split(item_cols, min(6, max(1, len(item_cols))))
-        groups = {f"Dimensi {i+1}": list(chunk) for i, chunk in enumerate(chunks) if len(chunk) > 0}
+    df = pd.concat(frames, ignore_index=True, sort=False)
 
-    return groups
+    zone_col = detect_col(df, ["Zone", "Zon"])
+    state_col = detect_col(df, ["State", "Negeri"])
 
-def add_construct_scores(df_raw, construct_map):
-    df = df_raw.copy()
-    valid = {}
-    for construct, cols in construct_map.items():
-        existing = [c for c in cols if c in df.columns]
-        if not existing:
-            continue
-        score_col = str(construct)
-        df[score_col] = df[existing].apply(pd.to_numeric, errors="coerce").mean(axis=1)
-        if df[score_col].notna().sum() > 0:
-            valid[score_col] = existing
-    if valid:
-        df["Skor Keseluruhan"] = df[list(valid.keys())].mean(axis=1)
-    return df, valid
+    if zone_col and zone_col != "Zone":
+        df["Zone"] = df[zone_col]
 
-def classify_score(v):
-    if pd.isna(v):
-        return "Tiada Data"
-    if v >= 4.0:
-        return "Baik"
-    if v >= 3.4:
-        return "Sederhana"
-    return "Perlu Intervensi"
+    if state_col and state_col != "State":
+        df["State"] = df[state_col]
 
-def cronbach_alpha(df_items):
-    data = df_items.apply(pd.to_numeric, errors="coerce").dropna(axis=1, how="all")
-    data = data.dropna(axis=0, how="any")
-    k = data.shape[1]
-    if k < 2 or data.shape[0] < 3:
-        return np.nan
-    variances = data.var(axis=0, ddof=1)
-    total_var = data.sum(axis=1).var(ddof=1)
-    if total_var == 0 or pd.isna(total_var):
-        return np.nan
-    return (k / (k - 1)) * (1 - variances.sum() / total_var)
+    if "Zone" not in df.columns:
+        df["Zone"] = "Tidak Dinyatakan"
 
-def alt_horizontal_bar(df_chart, x, y, title, sort="-x", height=430):
-    data = df_chart.copy()
-    if "Status" not in data.columns:
-        data["Status"] = data[y].apply(classify_score)
-    chart = (
-        alt.Chart(data)
-        .mark_bar(cornerRadiusTopRight=12, cornerRadiusBottomRight=12)
-        .encode(
-            y=alt.Y(f"{x}:N", sort=sort, title=None, axis=alt.Axis(labelColor="white", labelFontSize=13, labelLimit=420)),
-            x=alt.X(f"{y}:Q", title="Skor Purata", scale=alt.Scale(domain=[0, 5]), axis=alt.Axis(labelColor="white", titleColor="white", gridColor="rgba(255,255,255,0.12)")),
-            color=alt.Color("Status:N", scale=alt.Scale(domain=["Baik", "Sederhana", "Perlu Intervensi", "Tiada Data"], range=["#00F5D4", "#FFD166", "#EF476F", "#94A3B8"]), legend=alt.Legend(title=None, labelColor="white", orient="top")),
-            tooltip=[alt.Tooltip(f"{x}:N", title=x), alt.Tooltip(f"{y}:Q", title="Skor Purata", format=".2f"), alt.Tooltip("Status:N", title="Status")]
-        )
-        .properties(title=alt.TitleParams(text=title, color="white", fontSize=18, anchor="start"), height=height, background="transparent")
-        .configure_view(strokeWidth=0, fill="transparent")
-        .configure_axis(domainColor="rgba(255,255,255,0.25)", tickColor="rgba(255,255,255,0.25)")
-        .configure_legend(labelColor="white", titleColor="white")
+    if "State" not in df.columns:
+        df["State"] = "Tidak Dinyatakan"
+
+    return df
+# ============================================================
+# CONSTRUCT MAP
+# ============================================================
+
+def build_construct_map(df, selected_type):
+    if selected_type == "Klien":
+        return {
+            "Akses & Kebolehcapaian": get_cols_start(df, ["K2A"]),
+            "Komunikasi Perkhidmatan": get_cols_start(df, ["K2B"]),
+            "Hubungan Terapeutik": get_cols_start(df, ["K2C"]),
+            "Hak, Etika & Keselamatan": get_cols_start(df, ["K2D"]),
+            "Kesesuaian Intervensi": get_cols_start(df, ["K2E"]),
+            "Kesan & Perubahan Klien": get_cols_start(df, ["K2F"]),
+            "Outcome Klien": get_cols_start(df, ["K1O"])
+        }
+
+    if selected_type == "Pegawai":
+        return {
+            "Keberkesanan Intervensi Pegawai": get_cols_start(df, ["K3A"]),
+            "Kompetensi & Kapasiti Pegawai": get_cols_start(df, ["K3B"]),
+            "Pengurusan Kes": get_cols_start(df, ["K3C"]),
+            "SOP & Tadbir Urus": get_cols_start(df, ["K4A"]),
+            "Kolaborasi Dalaman": get_cols_start(df, ["K4B"]),
+            "Kualiti Penyampaian": get_cols_start(df, ["K4C"]),
+            "Keperluan Penambahbaikan Pegawai": get_cols_start(df, ["K5A"])
+        }
+
+    if selected_type == "Warga JKM":
+        return {
+            "Kesedaran Peranan": get_cols_start(df, ["K4D"]),
+            "Sokongan Organisasi": get_cols_start(df, ["K4E"]),
+            "Pematuhan Etika": get_cols_start(df, ["K4F"]),
+            "Koordinasi Sistem": get_cols_start(df, ["K4G"]),
+            "Data & Dashboard": get_cols_start(df, ["K4H"]),
+            "Keperluan Penambahbaikan Warga JKM": get_cols_start(df, ["K5B"])
+        }
+
+    general = {}
+
+    mapping = {
+        "Akses & Kebolehcapaian": ["K2A"],
+        "Komunikasi Perkhidmatan": ["K2B"],
+        "Hubungan Terapeutik": ["K2C"],
+        "Hak, Etika & Keselamatan": ["K2D"],
+        "Kesesuaian Intervensi": ["K2E"],
+        "Kesan & Perubahan Klien": ["K2F"],
+        "Keberkesanan Intervensi Pegawai": ["K3A"],
+        "Kompetensi & Kapasiti Pegawai": ["K3B"],
+        "Pengurusan Kes": ["K3C"],
+        "SOP & Tadbir Urus": ["K4A"],
+        "Kolaborasi Dalaman": ["K4B"],
+        "Kualiti Penyampaian": ["K4C"],
+        "Kesedaran Peranan": ["K4D"],
+        "Sokongan Organisasi": ["K4E"],
+        "Pematuhan Etika": ["K4F"],
+        "Koordinasi Sistem": ["K4G"],
+        "Data & Dashboard": ["K4H"],
+        "Keperluan Penambahbaikan Pegawai": ["K5A"],
+        "Keperluan Penambahbaikan Warga JKM": ["K5B"],
+        "Outcome Klien": ["K1O"],
+        "Kepuasan Sistem": ["SQ"],
+        "Outcome Teras": ["B"],
+        "Susulan T2": ["T2_"],
+        "Kelestarian T3": ["T3_"]
+    }
+
+    for label, prefixes in mapping.items():
+        cols = get_cols_start(df, prefixes)
+        if cols:
+            general[label] = cols
+
+    return general
+
+
+def add_construct_scores(df, construct_map):
+    temp = df.copy()
+    valid_constructs = {}
+
+    for name, cols in construct_map.items():
+        cols = [c for c in cols if c in temp.columns]
+
+        if cols:
+            temp[name] = safe_mean(temp, cols)
+
+            if temp[name].notna().sum() > 0:
+                valid_constructs[name] = cols
+
+    if valid_constructs:
+        temp["Skor Keseluruhan"] = safe_mean(temp, list(valid_constructs.keys()))
+    else:
+        temp["Skor Keseluruhan"] = np.nan
+
+    return temp, valid_constructs
+
+
+# ============================================================
+# ALTAIR CHART THEME - NO WHITE BACKGROUND
+# ============================================================
+
+def dark_chart_base(chart):
+    return chart.configure(
+        background="transparent"
+    ).configure_view(
+        strokeOpacity=0
+    ).configure_axis(
+        labelColor="#ffffff",
+        titleColor="#ffffff",
+        gridColor="rgba(255,255,255,0.22)",
+        domainColor="rgba(255,255,255,0.38)",
+        tickColor="rgba(255,255,255,0.38)",
+        labelFontSize=12,
+        titleFontSize=13
+    ).configure_title(
+        color="#ffffff",
+        fontSize=18,
+        fontWeight="bold",
+        anchor="start"
+    ).configure_legend(
+        labelColor="#ffffff",
+        titleColor="#ffffff",
+        labelFontSize=12,
+        titleFontSize=13,
+        orient="bottom"
     )
-    return chart
 
-def alt_column_bar(df_chart, x, y, title, height=360):
+
+def render_chart(chart):
+    st.markdown('<div class="chart-card">', unsafe_allow_html=True)
+    st.altair_chart(chart, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def alt_bar(df_chart, x, y, title, sort="-y", height=430):
     data = df_chart.copy()
-    return (
-        alt.Chart(data)
-        .mark_bar(cornerRadiusTopLeft=10, cornerRadiusTopRight=10)
-        .encode(
-            x=alt.X(f"{x}:N", title=None, sort="-y", axis=alt.Axis(labelColor="white", labelFontSize=12, labelAngle=-25, labelLimit=160)),
-            y=alt.Y(f"{y}:Q", title="Bilangan", axis=alt.Axis(labelColor="white", titleColor="white", gridColor="rgba(255,255,255,0.12)")),
-            tooltip=[alt.Tooltip(f"{x}:N", title=x), alt.Tooltip(f"{y}:Q", title=y, format=",.0f")]
-        )
-        .properties(title=alt.TitleParams(text=title, color="white", fontSize=18, anchor="start"), height=height, background="transparent")
-        .configure_mark(color="#00F5D4")
-        .configure_view(strokeWidth=0, fill="transparent")
-        .configure_axis(domainColor="rgba(255,255,255,0.25)", tickColor="rgba(255,255,255,0.25)")
+
+    data["Status"] = data[y].apply(
+        lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
     )
 
-def show_audit(title, body):
-    with st.expander(f"🧮 {title}"):
-        st.markdown(f'<div class="audit-box">{body}</div>', unsafe_allow_html=True)
+    chart = alt.Chart(data, background="transparent").mark_bar(
+        cornerRadiusTopLeft=9,
+        cornerRadiusTopRight=9
+    ).encode(
+        x=alt.X(
+            f"{x}:N",
+            sort=sort,
+            title=None,
+            axis=alt.Axis(labelAngle=-25)
+        ),
+        y=alt.Y(
+            f"{y}:Q",
+            title="Skor / Nilai"
+        ),
+        color=alt.Color(
+            "Status:N",
+            scale=alt.Scale(
+                domain=["Baik", "Sederhana", "Intervensi"],
+                range=["#00f5d4", "#fee440", "#ff4d6d"]
+            ),
+            legend=alt.Legend(title="Status")
+        ),
+        tooltip=[
+            alt.Tooltip(f"{x}:N", title=x),
+            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
+            alt.Tooltip("Status:N")
+        ]
+    ).properties(
+        title=title,
+        height=height,
+        background="transparent"
+    )
+
+    text = alt.Chart(data, background="transparent").mark_text(
+        dy=-8,
+        color="#ffffff",
+        fontWeight="bold",
+        fontSize=12
+    ).encode(
+        x=alt.X(f"{x}:N", sort=sort),
+        y=alt.Y(f"{y}:Q"),
+        text=alt.Text(f"{y}:Q", format=".2f")
+    )
+
+    return dark_chart_base(chart + text)
+
+
+def alt_horizontal_bar(df_chart, x, y, title, height=530):
+    data = df_chart.copy()
+
+    data["Status"] = data[y].apply(
+        lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
+    )
+
+    chart = alt.Chart(data, background="transparent").mark_bar(
+        cornerRadius=9
+    ).encode(
+        y=alt.Y(
+            f"{x}:N",
+            sort=alt.SortField(y, order="ascending"),
+            title=None
+        ),
+        x=alt.X(
+            f"{y}:Q",
+            title="Skor Purata",
+            scale=alt.Scale(domain=[0, 5])
+        ),
+        color=alt.Color(
+            "Status:N",
+            scale=alt.Scale(
+                domain=["Baik", "Sederhana", "Intervensi"],
+                range=["#00f5d4", "#fee440", "#ff4d6d"]
+            ),
+            legend=alt.Legend(title="Status")
+        ),
+        tooltip=[
+            alt.Tooltip(f"{x}:N", title=x),
+            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
+            alt.Tooltip("Status:N")
+        ]
+    ).properties(
+        title=title,
+        height=height,
+        background="transparent"
+    )
+
+    text = alt.Chart(data, background="transparent").mark_text(
+        align="left",
+        dx=6,
+        color="#ffffff",
+        fontWeight="bold",
+        fontSize=12
+    ).encode(
+        y=alt.Y(f"{x}:N", sort=alt.SortField(y, order="ascending")),
+        x=alt.X(f"{y}:Q"),
+        text=alt.Text(f"{y}:Q", format=".2f")
+    )
+
+    return dark_chart_base(chart + text)
+
+
+# ============================================================
+# REPORT AND STORY FUNCTIONS
+# ============================================================
+
+def build_report_intro(df_all, df_filtered, selected_zone, selected_state, selected_type):
+    total_n = len(df_all)
+    filtered_n = len(df_filtered)
+
+    zone_count = df_all["Zone"].nunique(dropna=True)
+    state_count = df_all["State"].nunique(dropna=True)
+
+    resp_dist = df_all["Jenis Responden"].value_counts(dropna=False).reset_index()
+    resp_dist.columns = ["Jenis Responden", "Bilangan"]
+
+    zone_phrase = "semua zon" if selected_zone == "Semua" else f"Zon {selected_zone}"
+    state_phrase = "semua negeri" if selected_state == "Semua" else f"Negeri {selected_state}"
+    type_phrase = "semua jenis responden" if selected_type == "Semua" else f"responden {selected_type}"
+
+    intro = f"""
+Laporan analitik ini dijana oleh JKM Psychological Services Decision Support & Intervention Intelligence System (DSS-IIS).
+Sistem ini bertujuan menilai dapatan perkhidmatan psikologi dan kaunseling berdasarkan data kuantitatif,
+data kualitatif, model RE-AIM, CMO, SEM eksploratori, simulasi impak dan cadangan intervensi bersasar.
+
+Secara keseluruhan, pangkalan data mengandungi {total_n:,} rekod responden yang merangkumi {zone_count}
+zon dan {state_count} negeri. Responden terdiri daripada tiga kategori utama, iaitu Klien (S1),
+Pegawai (S2) dan Warga JKM (S3).
+
+Bagi laporan semasa, penapisan data adalah berdasarkan {zone_phrase}, {state_phrase} dan {type_phrase}.
+Selepas filter digunakan, sebanyak {filtered_n:,} rekod responden dianalisis. Semua KPI, graf, RE-AIM,
+CMO, SEM, simulasi dan intervensi dalam laporan ini adalah berdasarkan data yang telah ditapis sahaja.
+"""
+    return intro.strip(), resp_dist
+
+
+def location_text(selected_zone, selected_state, selected_type):
+    parts = []
+
+    if selected_zone != "Semua":
+        parts.append(f"Zon {selected_zone}")
+
+    if selected_state != "Semua":
+        parts.append(f"Negeri {selected_state}")
+
+    if selected_type != "Semua":
+        parts.append(f"kumpulan responden {selected_type}")
+
+    return ", ".join(parts) if parts else "semua zon, semua negeri dan semua jenis responden"
+
 
 def lowest_analysis(df, group_col, group_label):
     if group_col not in df.columns:
         return f"Analisis {group_label} tidak boleh dibuat kerana kolum {group_col} tiada dalam data."
+
     temp = (
         df.groupby(group_col, dropna=False)["Skor Keseluruhan"]
         .agg(["mean", "count"])
         .reset_index()
-        .rename(columns={group_col: group_label, "mean": "Skor Purata", "count": "Bilangan"})
+        .rename(columns={
+            group_col: group_label,
+            "mean": "Skor Purata",
+            "count": "Bilangan"
+        })
         .sort_values("Skor Purata", ascending=True)
     )
+
     if temp.empty:
         return f"Tiada data untuk analisis {group_label}."
+
     lowest = temp.iloc[0]
     highest = temp.iloc[-1]
+
     return (
-        f"Berdasarkan filter semasa, {group_label} paling rendah ialah {lowest[group_label]} "
-        f"dengan skor purata {lowest['Skor Purata']:.2f} melibatkan {int(lowest['Bilangan'])} responden. "
-        f"{group_label} paling tinggi ialah {highest[group_label]} dengan skor purata {highest['Skor Purata']:.2f}. "
-        f"Keutamaan intervensi perlu diberi kepada {lowest[group_label]}."
+        f"Berdasarkan filter semasa, {group_label} paling rendah ialah "
+        f"{lowest[group_label]} dengan skor purata {lowest['Skor Purata']:.2f} "
+        f"melibatkan {int(lowest['Bilangan'])} responden. "
+        f"{group_label} paling tinggi ialah {highest[group_label]} dengan skor purata "
+        f"{highest['Skor Purata']:.2f} melibatkan {int(highest['Bilangan'])} responden. "
+        f"Ini menunjukkan keutamaan intervensi perlu diberi kepada {lowest[group_label]}."
     )
 
-def build_report_intro(df_all, df_filtered, zone, state, rtype):
-    total = len(df_all)
-    filtered = len(df_filtered)
-    zones = df_all["Zone"].nunique() if "Zone" in df_all.columns else 0
-    states = df_all["State"].nunique() if "State" in df_all.columns else 0
-    types = df_all["Jenis Responden"].nunique() if "Jenis Responden" in df_all.columns else 0
-    text = (
-        f"Laporan ini dijana secara automatik berdasarkan {filtered:,} rekod selepas filter daripada jumlah keseluruhan {total:,} rekod. "
-        f"Data merangkumi {zones} zon, {states} negeri dan {types} jenis responden. "
-        f"Filter semasa ialah Zon: {zone}, Negeri: {state}, Jenis Responden: {rtype}. "
-        f"Semua skor dikira menggunakan purata item Likert yang sah dan diringkaskan kepada konstruk, skor keseluruhan, status prestasi serta cadangan intervensi."
-    )
-    dist = df_all["Jenis Responden"].value_counts(dropna=False).reset_index()
-    dist.columns = ["Jenis Responden", "Bilangan"]
-    dist["Peratus"] = dist["Bilangan"] / dist["Bilangan"].sum() * 100
-    dist["Peratus"] = dist["Peratus"].round(1)
-    return text, dist
 
-def make_group_summary(df, group_col):
-    if group_col not in df.columns:
-        return pd.DataFrame()
-    out = df.groupby(group_col, dropna=False)["Skor Keseluruhan"].agg(["mean", "count"]).reset_index()
-    out.columns = [group_col, "Skor Purata", "Bilangan"]
-    out["Status"] = out["Skor Purata"].apply(classify_score)
-    return out.sort_values("Skor Purata", ascending=True)
+# ============================================================
+# ADMIN LOGIN ONLY
+# ============================================================
 
-def intervention_text(score, dimension="keseluruhan"):
-    if pd.isna(score):
-        return "Data tidak mencukupi untuk menjana intervensi."
-    if score < 3.4:
-        return f"Intervensi segera diperlukan untuk {dimension}: audit isu utama, sesi libat urus, modul sokongan psikososial, pemantauan kes berisiko dan pelaporan mingguan."
-    if score < 4.0:
-        return f"Intervensi penambahbaikan dicadangkan untuk {dimension}: bimbingan bersasar, klinik sokongan, pemantauan bulanan dan pengukuhan komunikasi perkhidmatan."
-    return f"{dimension} berada pada tahap baik. Fokus kepada pengekalan kualiti, dokumentasi amalan terbaik dan peluasan kepada lokasi lain."
-
-def simple_theme_summary(df_qual):
-    if df_qual.empty:
-        return pd.DataFrame(), "Tiada data kualitatif dikesan dalam fail."
-    keywords = {
-        "Akses Perkhidmatan": ["akses", "mudah", "sukar", "jauh", "temujanji", "appointment"],
-        "Kualiti Kaunseling": ["kaunseling", "psikologi", "sesi", "pegawai", "membantu"],
-        "Masa Menunggu": ["tunggu", "lambat", "cepat", "masa"],
-        "Komunikasi": ["maklum", "komunikasi", "jelas", "penerangan", "info"],
-        "Kemudahan": ["bilik", "selesa", "kemudahan", "ruang", "privasi"]
-    }
-    rows = []
-    text_series = df_qual["Teks"].fillna("").astype(str).str.lower()
-    for theme, keys in keywords.items():
-        count = sum(text_series.str.contains(k, regex=False).sum() for k in keys)
-        rows.append({"Tema": theme, "Kekerapan Petunjuk": int(count)})
-    theme_df = pd.DataFrame(rows).sort_values("Kekerapan Petunjuk", ascending=False)
-    top = theme_df.iloc[0]
-    story = f"Tema kualitatif paling dominan ialah {top['Tema']} dengan {int(top['Kekerapan Petunjuk'])} petunjuk kata kunci."
-    return theme_df, story
-
-def to_html_table(df):
-    if df is None or df.empty:
-        return "<p>Tiada data.</p>"
-    return df.to_html(index=False, border=0, classes="tbl")
-
-def build_html_report(title, intro, respondent_dist, kpis, dim_summary, zone_sum, state_sum, resp_sum, theme_df, summary_text):
-    css = """
-    <style>
-    body{font-family:Arial,sans-serif;background:#081827;color:#0f172a;margin:30px;}
-    .page{background:white;border-radius:20px;padding:30px;}
-    h1{color:#102542;} h2{color:#231942;border-bottom:2px solid #ffd166;padding-bottom:6px;}
-    .kpi{display:inline-block;width:18%;margin:1%;padding:14px;border-radius:14px;background:#eef6ff;vertical-align:top;}
-    .box{padding:16px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin:10px 0;}
-    table{border-collapse:collapse;width:100%;font-size:12px;} th{background:#102542;color:white;} th,td{border:1px solid #dbe3ef;padding:7px;text-align:left;}
-    </style>
-    """
-    kpi_html = "".join([f"<div class='kpi'><b>{a}</b><br><span style='font-size:24px;font-weight:800'>{b}</span><br>{c}</div>" for a,b,c in kpis])
-    return f"""
-    <html><head><meta charset='utf-8'>{css}<title>{html_escape(title)}</title></head>
-    <body><div class='page'>
-    <h1>{html_escape(title)}</h1>
-    <div class='box'>{html_escape(intro)}</div>
-    <h2>1. Profil Responden</h2>{to_html_table(respondent_dist)}
-    <h2>2. KPI Utama</h2>{kpi_html}
-    <h2>3. Analisis Dimensi</h2>{to_html_table(dim_summary)}
-    <h2>4. Analisis Zon</h2>{to_html_table(zone_sum)}
-    <h2>5. Analisis Negeri</h2>{to_html_table(state_sum)}
-    <h2>6. Analisis Jenis Responden</h2>{to_html_table(resp_sum)}
-    <h2>7. Tema Kualitatif</h2>{to_html_table(theme_df)}
-    <h2>8. Rumusan Pengurusan</h2><div class='box'>{html_escape(summary_text)}</div>
-    </div></body></html>
-    """
-
-# =====================================================
-# SESSION STATE
-# =====================================================
 if "admin_logged" not in st.session_state:
     st.session_state.admin_logged = False
+
 if "uploaded_excel" not in st.session_state:
     st.session_state.uploaded_excel = None
 
-# =====================================================
-# HERO
-# =====================================================
 st.markdown("""
 <div class="hero">
 <h1>JKM Psychological Services Decision Support & Intervention Intelligence System</h1>
 <p>
-Sistem ini membaca data, menjelaskan jalan kira, mengenal pasti isu mengikut Zon, Negeri dan Jenis Responden,
-mencadangkan intervensi bersasar, mensimulasikan impak, serta menjana laporan pengurusan. Semua graf menggunakan latar transparent tanpa kotak putih.
+Sistem ini bukan sekadar dashboard. Ia membaca data, menjelaskan jalan kira, mengenal pasti isu mengikut Zon,
+Negeri dan Jenis Responden, mencadangkan intervensi bersasar, mensimulasikan impak, serta menjana laporan pengurusan.
 </p>
 </div>
 """, unsafe_allow_html=True)
 
-# =====================================================
-# ADMIN UPLOAD
-# =====================================================
 with st.expander("🔐 Admin sahaja: login untuk upload / reset data"):
     if not st.session_state.admin_logged:
         c1, c2, c3 = st.columns([1, 1, 1])
+
         with c1:
             username = st.text_input("Username admin")
+
         with c2:
             password = st.text_input("Password admin", type="password")
+
         with c3:
             st.write("")
             st.write("")
@@ -500,100 +760,103 @@ with st.expander("🔐 Admin sahaja: login untuk upload / reset data"):
                     st.rerun()
                 else:
                     st.error("Username atau password salah.")
+
         st.caption("User biasa tidak perlu login. Login hanya untuk admin upload atau reset data.")
+
     else:
         st.success("Admin aktif. Upload data dibenarkan.")
         uploaded_file = st.file_uploader("Upload fail Excel data JKM", type=["xlsx"])
+
         if uploaded_file is not None:
             st.session_state.uploaded_excel = uploaded_file
             st.success("Fail berjaya dimuat naik. Dashboard menggunakan data baharu.")
+
         c1, c2 = st.columns(2)
+
         with c1:
-            if st.button("Reset data upload"):
+            if st.button("Reset kepada fail asal"):
                 st.session_state.uploaded_excel = None
-                st.success("Data upload telah dikosongkan. Upload semula fail Excel jika tiada fail default dalam folder app.")
                 st.rerun()
+
         with c2:
             if st.button("Logout Admin"):
                 st.session_state.admin_logged = False
                 st.rerun()
 
-# =====================================================
-# DATA LOAD
-# =====================================================
-data_source = st.session_state.uploaded_excel
-
-if data_source is None:
-    default_path = find_default_excel()
-    if default_path is not None:
-        data_source = default_path
-
-if data_source is None:
-    st.markdown('<div class="section">', unsafe_allow_html=True)
-    st.warning("Tiada fail Excel dikesan. Sila login admin dan upload fail Excel JKM terlebih dahulu.")
-    st.markdown("""
-    **Nota penting:** App ini tidak lagi bergantung kepada satu nama fail sahaja.  
-    Admin boleh upload terus fail `.xlsx`, atau letakkan salah satu fail ini dalam folder GitHub yang sama dengan `app.py`:
-
-    `JKM_7Sheet_Full_Simulation_Raw_Data(1).xlsx`  
-    `JKM_7Sheet_Full_Simulation_Raw_Data(2).xlsx`  
-    `JKM_7Sheet_Full_Simulation_Raw_Data.xlsx`
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
+# ============================================================
+# LOAD DATA
+# ============================================================
 
 try:
+    data_source = (
+        st.session_state.uploaded_excel
+        if st.session_state.uploaded_excel is not None
+        else DEFAULT_FILE
+    )
     sheets = load_excel(data_source)
-except Exception as e:
-    st.error("Fail Excel tidak dapat dibaca. Sila upload semula fail Excel yang betul.")
-    st.caption(f"Info teknikal: {e}")
+
+except Exception:
+    st.error("Data belum tersedia atau fail default tidak ditemui. Login admin dan upload fail Excel.")
     st.stop()
 
 df_all_raw = standardise_quant(sheets)
 df_qual_all = standardise_qual(sheets)
 
 if df_all_raw.empty:
-    st.error("Tiada sheet kuantitatif dikesan. Pastikan fail Excel ada item Likert skala 1 hingga 5.")
+    st.error("Tiada sheet kuantitatif dikesan.")
     st.stop()
 
-# =====================================================
+# ============================================================
 # FILTERS
-# =====================================================
+# ============================================================
+
 st.markdown('<div class="filter-card">', unsafe_allow_html=True)
 st.markdown("### 🎛️ Filter Pelaporan Utama")
+
 f1, f2, f3 = st.columns(3)
 
 zone_values = ["Semua"] + sorted([str(x) for x in df_all_raw["Zone"].dropna().unique()])
+
 with f1:
     selected_zone = st.selectbox("Zon", zone_values)
 
 df_zone = df_all_raw.copy()
+
 if selected_zone != "Semua":
     df_zone = df_zone[df_zone["Zone"].astype(str) == str(selected_zone)]
 
 state_values = ["Semua"] + sorted([str(x) for x in df_zone["State"].dropna().unique()])
+
 with f2:
     selected_state = st.selectbox("Negeri", state_values)
 
 respondent_values = ["Semua"] + sorted([str(x) for x in df_all_raw["Jenis Responden"].dropna().unique()])
+
 with f3:
     selected_type = st.selectbox("Jenis Responden", respondent_values)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 df_filtered_raw = df_all_raw.copy()
+
 if selected_zone != "Semua":
     df_filtered_raw = df_filtered_raw[df_filtered_raw["Zone"].astype(str) == str(selected_zone)]
+
 if selected_state != "Semua":
     df_filtered_raw = df_filtered_raw[df_filtered_raw["State"].astype(str) == str(selected_state)]
+
 if selected_type != "Semua":
     df_filtered_raw = df_filtered_raw[df_filtered_raw["Jenis Responden"].astype(str) == str(selected_type)]
 
 df_qual = df_qual_all.copy()
+
 if not df_qual.empty:
     if selected_zone != "Semua":
         df_qual = df_qual[df_qual["Zone"].astype(str) == str(selected_zone)]
+
     if selected_state != "Semua":
         df_qual = df_qual[df_qual["State"].astype(str) == str(selected_state)]
+
     if selected_type != "Semua":
         df_qual = df_qual[df_qual["Jenis Responden"].astype(str) == str(selected_type)]
 
@@ -610,43 +873,84 @@ if not valid_constructs:
 
 dimension_cols = list(valid_constructs.keys())
 item_cols = get_item_cols(df_filtered_raw)
-intro_text, respondent_dist = build_report_intro(df_all_raw, df, selected_zone, selected_state, selected_type)
 
-# =====================================================
+# ============================================================
 # INTRO
-# =====================================================
+# ============================================================
+
+intro_text, respondent_dist = build_report_intro(
+    df_all_raw,
+    df,
+    selected_zone,
+    selected_state,
+    selected_type
+)
+
 st.markdown('<div class="section">', unsafe_allow_html=True)
 st.markdown("## 📘 Pengenalan Pelaporan Automatik")
-st.markdown(f'<div class="note-blue">{html_escape(intro_text)}</div>', unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="note-blue">
+{html_escape(intro_text).replace(chr(10), "<br>")}
+</div>
+""", unsafe_allow_html=True)
 
 c1, c2 = st.columns([1, 1])
+
 with c1:
     st.markdown("### Komposisi Responden Keseluruhan")
     st.dataframe(respondent_dist, use_container_width=True, hide_index=True)
+
 with c2:
     filter_summary = pd.DataFrame({
-        "Perkara": ["Zon dipilih", "Negeri dipilih", "Jenis responden dipilih", "Bilangan data selepas filter"],
-        "Nilai": [selected_zone, selected_state, selected_type, f"{len(df):,}"]
+        "Perkara": [
+            "Zon dipilih",
+            "Negeri dipilih",
+            "Jenis responden dipilih",
+            "Bilangan data selepas filter"
+        ],
+        "Nilai": [
+            selected_zone,
+            selected_state,
+            selected_type,
+            f"{len(df):,}"
+        ]
     })
+
     st.markdown("### Ringkasan Filter Laporan")
     st.dataframe(filter_summary, use_container_width=True, hide_index=True)
 
-show_audit("Jalan kira pengenalan laporan", f"Sistem membaca keseluruhan data, kemudian menapis data mengikut Zon = <b>{html_escape(selected_zone)}</b>, Negeri = <b>{html_escape(selected_state)}</b>, dan Jenis Responden = <b>{html_escape(selected_type)}</b>. Analisis selepas ini menggunakan <b>{len(df):,}</b> rekod.")
+show_audit(
+    "Jalan kira pengenalan laporan",
+    f"""
+    Sistem membaca keseluruhan data, mengira jumlah rekod, bilangan zon, bilangan negeri dan komposisi responden.
+    Selepas itu sistem menggunakan tiga filter utama:
+    <b>Zon = {html_escape(selected_zone)}</b>,
+    <b>Negeri = {html_escape(selected_state)}</b> dan
+    <b>Jenis Responden = {html_escape(selected_type)}</b>.
+    Semua analisis selepas ini hanya menggunakan <b>{len(df):,}</b> rekod yang melepasi filter.
+    """
+)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# =====================================================
+# ============================================================
 # KPI
-# =====================================================
+# ============================================================
+
 n = len(df)
 overall = df["Skor Keseluruhan"].mean()
 high_pct = (df["Skor Keseluruhan"] >= 4.0).mean() * 100
 risk_pct = (df["Skor Keseluruhan"] < 3.4).mean() * 100
 alpha = cronbach_alpha(df_filtered_raw[item_cols]) if item_cols else np.nan
+
 alpha_display = f"{alpha:.3f}" if not pd.isna(alpha) else "NA"
 overall_display = f"{overall:.2f}" if not pd.isna(overall) else "NA"
 
 st.markdown("## 📌 KPI Utama")
+
 k1, k2, k3, k4, k5 = st.columns(5)
+
 kpis = [
     ("Bil. Responden", f"{n:,}", "Data selepas filter"),
     ("Skor Keseluruhan", overall_display, classify_score(overall)),
@@ -654,6 +958,7 @@ kpis = [
     ("% Perlu Intervensi", f"{risk_pct:.1f}%", "Skor < 3.40"),
     ("Cronbach Alpha", alpha_display, "Konsistensi dalaman")
 ]
+
 for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis):
     with col:
         st.markdown(f"""
@@ -664,122 +969,953 @@ for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis):
         </div>
         """, unsafe_allow_html=True)
 
-show_audit("Jalan kira KPI", f"<b>Bilangan Responden</b> = {n:,}.<br><b>Skor Keseluruhan</b> = purata semua konstruk sah: {html_escape(', '.join(dimension_cols))}.<br><b>% Baik</b> = responden skor ≥ 4.00 / {n:,} × 100 = {high_pct:.1f}%.<br><b>% Perlu Intervensi</b> = responden skor < 3.40 / {n:,} × 100 = {risk_pct:.1f}%.<br><b>Cronbach Alpha</b> dikira daripada item Likert yang dikesan.")
+show_audit(
+    "Jalan kira KPI",
+    f"""
+    <b>Bilangan Responden</b> = jumlah baris data selepas filter = {n:,}.<br>
+    <b>Skor Keseluruhan</b> = purata semua konstruk sah:
+    {html_escape(", ".join(dimension_cols))}.<br>
+    <b>% Baik</b> = responden dengan skor keseluruhan ≥ 4.00 / {n:,} × 100 = {high_pct:.1f}%.<br>
+    <b>% Perlu Intervensi</b> = responden dengan skor keseluruhan < 3.40 / {n:,} × 100 = {risk_pct:.1f}%.<br>
+    <b>Cronbach Alpha</b> dikira daripada item Likert yang dikesan dalam data filter semasa.
+    """
+)
 
-# =====================================================
+# ============================================================
 # DIMENSION ANALYSIS
-# =====================================================
+# ============================================================
+
 st.markdown('<div class="section">', unsafe_allow_html=True)
 st.markdown("## 📊 Analisis Dimensi / Konstruk")
-dim_summary = df[dimension_cols].mean().reset_index().rename(columns={"index": "Dimensi", 0: "Skor Purata"})
+
+dim_summary = (
+    df[dimension_cols]
+    .mean()
+    .reset_index()
+    .rename(columns={"index": "Dimensi", 0: "Skor Purata"})
+)
+
 dim_summary["Status"] = dim_summary["Skor Purata"].apply(classify_score)
 dim_summary = dim_summary.sort_values("Skor Purata", ascending=True)
 
-st.altair_chart(alt_horizontal_bar(dim_summary, "Dimensi", "Skor Purata", "Skor Purata Mengikut Dimensi / Konstruk"), use_container_width=True, theme=None)
-st.dataframe(dim_summary, use_container_width=True, hide_index=True)
+render_chart(
+    alt_horizontal_bar(
+        dim_summary,
+        "Dimensi",
+        "Skor Purata",
+        "Skor Purata Mengikut Dimensi / Konstruk"
+    )
+)
 
 lowest_dim = dim_summary.iloc[0]["Dimensi"]
 lowest_score = dim_summary.iloc[0]["Skor Purata"]
 highest_dim = dim_summary.iloc[-1]["Dimensi"]
 highest_score = dim_summary.iloc[-1]["Skor Purata"]
-st.markdown(f'<div class="intervention-box"><b>Dapatan utama:</b> Dimensi paling rendah ialah <b>{html_escape(lowest_dim)}</b> ({lowest_score:.2f}), manakala dimensi paling tinggi ialah <b>{html_escape(highest_dim)}</b> ({highest_score:.2f}).<br><br><b>Cadangan:</b> {html_escape(intervention_text(lowest_score, lowest_dim))}</div>', unsafe_allow_html=True)
-show_audit("Jalan kira graf dimensi", "Setiap bar mewakili skor purata bagi satu konstruk. Skor konstruk = purata item dalam konstruk tersebut. Status: Baik ≥ 4.00, Sederhana 3.40–3.99, Perlu Intervensi < 3.40.")
-st.markdown('</div>', unsafe_allow_html=True)
 
-# =====================================================
-# GROUP COMPARISON
-# =====================================================
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.markdown("## 🌍 Analisis Mengikut Zon, Negeri dan Jenis Responden")
-zone_sum = make_group_summary(df, "Zone")
-state_sum = make_group_summary(df, "State")
-resp_sum = make_group_summary(df, "Jenis Responden")
-
-t1, t2, t3 = st.tabs(["Zon", "Negeri", "Jenis Responden"])
-with t1:
-    if not zone_sum.empty:
-        st.altair_chart(alt_horizontal_bar(zone_sum, "Zone", "Skor Purata", "Skor Purata Mengikut Zon", height=360), use_container_width=True, theme=None)
-        st.dataframe(zone_sum, use_container_width=True, hide_index=True)
-        st.info(lowest_analysis(df, "Zone", "Zon"))
-with t2:
-    if not state_sum.empty:
-        st.altair_chart(alt_horizontal_bar(state_sum, "State", "Skor Purata", "Skor Purata Mengikut Negeri", height=520), use_container_width=True, theme=None)
-        st.dataframe(state_sum, use_container_width=True, hide_index=True)
-        st.info(lowest_analysis(df, "State", "Negeri"))
-with t3:
-    if not resp_sum.empty:
-        st.altair_chart(alt_horizontal_bar(resp_sum, "Jenis Responden", "Skor Purata", "Skor Purata Mengikut Jenis Responden", height=360), use_container_width=True, theme=None)
-        st.dataframe(resp_sum, use_container_width=True, hide_index=True)
-        st.info(lowest_analysis(df, "Jenis Responden", "Jenis Responden"))
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =====================================================
-# QUALITATIVE
-# =====================================================
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.markdown("## 🗣️ Analisis Kualitatif Ringkas")
-theme_df, theme_story = simple_theme_summary(df_qual)
-if not theme_df.empty:
-    st.altair_chart(alt_horizontal_bar(theme_df, "Tema", "Kekerapan Petunjuk", "Kekerapan Tema Kualitatif", sort="-x", height=360), use_container_width=True, theme=None)
-    st.dataframe(theme_df, use_container_width=True, hide_index=True)
-st.markdown(f'<div class="note-blue">{html_escape(theme_story)}</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =====================================================
-# INTERVENTION + SIMULATION
-# =====================================================
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.markdown("## 🎯 Intervensi Bersasar dan Simulasi Impak")
-boost = st.slider("Simulasi peningkatan skor intervensi", min_value=0.05, max_value=0.80, value=0.20, step=0.05)
-sim_df = dim_summary.copy()
-sim_df["Skor Selepas Intervensi"] = (sim_df["Skor Purata"] + boost).clip(upper=5)
-sim_long = sim_df.melt(id_vars=["Dimensi"], value_vars=["Skor Purata", "Skor Selepas Intervensi"], var_name="Senario", value_name="Skor")
-chart_sim = (
-    alt.Chart(sim_long)
-    .mark_bar(cornerRadiusTopLeft=8, cornerRadiusTopRight=8)
-    .encode(
-        x=alt.X("Dimensi:N", title=None, axis=alt.Axis(labelColor="white", labelAngle=-25, labelLimit=160)),
-        y=alt.Y("Skor:Q", title="Skor", scale=alt.Scale(domain=[0,5]), axis=alt.Axis(labelColor="white", titleColor="white", gridColor="rgba(255,255,255,0.12)")),
-        color=alt.Color("Senario:N", legend=alt.Legend(title=None, labelColor="white", orient="top")),
-        xOffset="Senario:N",
-        tooltip=["Dimensi:N", "Senario:N", alt.Tooltip("Skor:Q", format=".2f")]
-    )
-    .properties(title=alt.TitleParams(text="Simulasi Sebelum dan Selepas Intervensi", color="white", fontSize=18, anchor="start"), height=430, background="transparent")
-    .configure_view(strokeWidth=0, fill="transparent")
-    .configure_axis(domainColor="rgba(255,255,255,0.25)", tickColor="rgba(255,255,255,0.25)")
-    .configure_legend(labelColor="white", titleColor="white")
+show_audit(
+    "Jalan kira graf dimensi",
+    f"""
+    Setiap bar mewakili skor purata bagi satu konstruk. Sistem mengira purata item bagi setiap konstruk
+    untuk setiap responden, kemudian mengambil purata keseluruhan responden.
+    Konstruk terendah ialah <b>{html_escape(lowest_dim)}</b> dengan skor <b>{lowest_score:.2f}</b>,
+    manakala konstruk tertinggi ialah <b>{html_escape(highest_dim)}</b> dengan skor <b>{highest_score:.2f}</b>.<br><br>
+    <b>Formula konstruk terendah:</b><br>
+    {html_escape(formula_text(lowest_dim, valid_constructs.get(lowest_dim, [])))}
+    """
 )
-st.altair_chart(chart_sim, use_container_width=True, theme=None)
-st.markdown(f'<div class="intervention-box"><b>Cadangan automatik:</b> {html_escape(intervention_text(lowest_score, lowest_dim))}<br><br><b>Simulasi:</b> Jika intervensi menaikkan skor sebanyak {boost:.2f}, dimensi terendah dijangka meningkat daripada {lowest_score:.2f} kepada {min(lowest_score + boost, 5):.2f}.</div>', unsafe_allow_html=True)
+
+st.dataframe(dim_summary, use_container_width=True, hide_index=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# =====================================================
-# REPORT DOWNLOAD
-# =====================================================
+# ============================================================
+# GROUP COMPARISON
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🧭 Perbandingan Mengikut Zon, Negeri dan Jenis Responden")
+
+group_choice_label = st.selectbox(
+    "Pilih kategori perbandingan",
+    ["Zon", "Negeri", "Jenis Responden"],
+    index=0
+)
+
+group_col_map = {
+    "Zon": "Zone",
+    "Negeri": "State",
+    "Jenis Responden": "Jenis Responden"
+}
+
+group_col = group_col_map[group_choice_label]
+
+group_df = (
+    df.groupby(group_col, dropna=False)["Skor Keseluruhan"]
+    .agg(["mean", "count"])
+    .reset_index()
+    .rename(columns={
+        group_col: "Kategori",
+        "mean": "Skor Purata",
+        "count": "Bilangan"
+    })
+    .sort_values("Skor Purata", ascending=False)
+)
+
+render_chart(
+    alt_bar(
+        group_df,
+        "Kategori",
+        "Skor Purata",
+        f"Perbandingan Skor Keseluruhan Mengikut {group_choice_label}"
+    )
+)
+
+best_row = group_df.iloc[0]
+weak_row = group_df.iloc[-1]
+
+zone_story = lowest_analysis(df, "Zone", "Zon")
+state_story = lowest_analysis(df, "State", "Negeri")
+resp_story = lowest_analysis(df, "Jenis Responden", "Jenis Responden")
+
+show_audit(
+    "Jalan kira graf perbandingan kategori",
+    f"""
+    Sistem mengumpulkan data berdasarkan <b>{html_escape(group_choice_label)}</b>.
+    Bagi setiap kategori, skor dikira sebagai purata <b>Skor Keseluruhan</b>.
+    Kategori tertinggi ialah <b>{html_escape(best_row['Kategori'])}</b> dengan skor
+    <b>{best_row['Skor Purata']:.2f}</b> melibatkan <b>{int(best_row['Bilangan'])}</b> responden.
+    Kategori terendah ialah <b>{html_escape(weak_row['Kategori'])}</b> dengan skor
+    <b>{weak_row['Skor Purata']:.2f}</b> melibatkan <b>{int(weak_row['Bilangan'])}</b> responden.
+    """
+)
+
+show_note(
+    "Dapatan automatik mengikut Zon, Negeri dan Jenis Responden",
+    f"""
+    <b>Analisis Zon:</b> {html_escape(zone_story)}<br><br>
+    <b>Analisis Negeri:</b> {html_escape(state_story)}<br><br>
+    <b>Analisis Jenis Responden:</b> {html_escape(resp_story)}
+    """
+)
+
+st.dataframe(group_df, use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# RE-AIM
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🎯 Analisis RE-AIM")
+
+reaim_map = {
+    "Reach": [
+        "Akses & Kebolehcapaian",
+        "Outcome Teras",
+        "Kepuasan Sistem"
+    ],
+    "Effectiveness": [
+        "Kesan & Perubahan Klien",
+        "Outcome Klien",
+        "Keberkesanan Intervensi Pegawai"
+    ],
+    "Adoption": [
+        "Kolaborasi Dalaman",
+        "Kesedaran Peranan",
+        "Sokongan Organisasi"
+    ],
+    "Implementation": [
+        "SOP & Tadbir Urus",
+        "Kualiti Penyampaian",
+        "Pematuhan Etika",
+        "Pengurusan Kes"
+    ],
+    "Maintenance": [
+        "Kelestarian T3",
+        "Keperluan Penambahbaikan Pegawai",
+        "Keperluan Penambahbaikan Warga JKM"
+    ]
+}
+
+reaim_rows = []
+
+for domain, dims in reaim_map.items():
+    available = [
+        d for d in dims
+        if d in df.columns and df[d].notna().sum() > 0
+    ]
+
+    score = df[available].mean(axis=1).mean() if available else np.nan
+
+    reaim_rows.append({
+        "Domain RE-AIM": domain,
+        "Skor": score,
+        "Status": classify_score(score),
+        "Dimensi Digunakan": ", ".join(available) if available else "Tiada dimensi sepadan"
+    })
+
+reaim_df = pd.DataFrame(reaim_rows)
+
+if reaim_df["Skor"].notna().sum() > 0:
+    render_chart(
+        alt_bar(
+            reaim_df.dropna(subset=["Skor"]),
+            "Domain RE-AIM",
+            "Skor",
+            "Skor Mengikut Domain RE-AIM",
+            sort=None
+        )
+    )
+
+show_audit(
+    "Jalan kira RE-AIM",
+    """
+    RE-AIM dipetakan kepada konstruk yang wujud dalam dataset selepas filter.
+    Reach merujuk capaian perkhidmatan; Effectiveness merujuk keberkesanan/outcome;
+    Adoption merujuk penerimaan dan sokongan organisasi; Implementation merujuk pelaksanaan SOP,
+    kualiti dan pengurusan; Maintenance merujuk kelestarian dan keperluan penambahbaikan.
+    """
+)
+
+st.dataframe(reaim_df, use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# CMO
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🧩 Analisis Kualitatif CMO")
+
+if df_qual.empty:
+    show_warning_box(
+        "Tiada data kualitatif",
+        "Tiada data kualitatif dikesan untuk filter semasa."
+    )
+
+else:
+    cmo_cols = [
+        c for c in [
+            "CMO_Context",
+            "CMO_Mechanism",
+            "CMO_Outcome",
+            "RE_AIM_Tag"
+        ]
+        if c in df_qual.columns
+    ]
+
+    if not cmo_cols:
+        show_warning_box(
+            "Kolum CMO tidak ditemui",
+            "Data kualitatif wujud tetapi kolum CMO tidak ditemui."
+        )
+
+    else:
+        for c in cmo_cols:
+            counts = (
+                df_qual[c]
+                .dropna()
+                .astype(str)
+                .value_counts()
+                .head(10)
+                .reset_index()
+            )
+
+            counts.columns = ["Tema", "Bilangan"]
+
+            if counts.empty:
+                continue
+
+            st.markdown(f"### {c}")
+
+            chart_cmo = alt.Chart(
+                counts,
+                background="transparent"
+            ).mark_bar(
+                cornerRadiusTopLeft=9,
+                cornerRadiusTopRight=9
+            ).encode(
+                x=alt.X(
+                    "Tema:N",
+                    sort="-y",
+                    title=None,
+                    axis=alt.Axis(labelAngle=-25)
+                ),
+                y=alt.Y(
+                    "Bilangan:Q",
+                    title="Bilangan"
+                ),
+                color=alt.Color(
+                    "Tema:N",
+                    legend=None,
+                    scale=alt.Scale(
+                        range=[
+                            "#00f5d4",
+                            "#fee440",
+                            "#ff4d6d",
+                            "#4cc9f0",
+                            "#f72585",
+                            "#80ed99",
+                            "#ffb703",
+                            "#b5179e",
+                            "#90e0ef",
+                            "#f77f00"
+                        ]
+                    )
+                ),
+                tooltip=[
+                    "Tema:N",
+                    "Bilangan:Q"
+                ]
+            ).properties(
+                title=f"Taburan Tema {c}",
+                height=380,
+                background="transparent"
+            )
+
+            render_chart(dark_chart_base(chart_cmo))
+
+            top_theme = counts.iloc[0]["Tema"]
+            top_count = counts.iloc[0]["Bilangan"]
+
+            show_audit(
+                f"Jalan kira tema {c}",
+                f"""
+                Sistem mengira kekerapan setiap tema dalam kolum <b>{html_escape(c)}</b>.
+                Tema tertinggi ialah <b>{html_escape(top_theme)}</b> dengan
+                <b>{int(top_count)}</b> sebutan.
+                """
+            )
+
+            st.dataframe(counts, use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# SEM
+# ============================================================
+
+def get_sem_spec(df_raw, selected_type):
+    if selected_type == "Semua":
+        return None, None, (
+            "SEM tidak dijalankan kerana Jenis Responden = Semua. "
+            "Instrumen S1, S2 dan S3 mempunyai konstruk dan DV berbeza. "
+            "Sila pilih Klien, Pegawai atau Warga JKM untuk SEM khusus."
+        )
+
+    if selected_type == "Klien":
+        iv = {
+            "Akses & Kebolehcapaian": get_cols_start(df_raw, ["K2A"]),
+            "Komunikasi Perkhidmatan": get_cols_start(df_raw, ["K2B"]),
+            "Hubungan Terapeutik": get_cols_start(df_raw, ["K2C"]),
+            "Hak, Etika & Keselamatan": get_cols_start(df_raw, ["K2D"]),
+            "Kesesuaian Intervensi": get_cols_start(df_raw, ["K2E"])
+        }
+
+        dv = get_cols_start(df_raw, ["K1O"])
+
+        if not dv:
+            dv = [
+                c for c in [
+                    "Score_Core_Outcome",
+                    "Score_Overall",
+                    "Score_T1_Outcome"
+                ]
+                if c in df_raw.columns
+            ]
+
+    elif selected_type == "Pegawai":
+        iv = {
+            "Kompetensi & Kapasiti Pegawai": get_cols_start(df_raw, ["K3B"]),
+            "Pengurusan Kes": get_cols_start(df_raw, ["K3C"]),
+            "SOP & Tadbir Urus": get_cols_start(df_raw, ["K4A"]),
+            "Kolaborasi Dalaman": get_cols_start(df_raw, ["K4B"]),
+            "Kualiti Penyampaian": get_cols_start(df_raw, ["K4C"])
+        }
+
+        dv = [
+            c for c in [
+                "Score_K3A_Success",
+                "Score_Overall"
+            ]
+            if c in df_raw.columns
+        ]
+
+        if not dv:
+            dv = get_cols_start(df_raw, ["K3A"])
+
+    elif selected_type == "Warga JKM":
+        iv = {
+            "Kesedaran Peranan": get_cols_start(df_raw, ["K4D"]),
+            "Sokongan Organisasi": get_cols_start(df_raw, ["K4E"]),
+            "Pematuhan Etika": get_cols_start(df_raw, ["K4F"]),
+            "Koordinasi Sistem": get_cols_start(df_raw, ["K4G"]),
+            "Data & Dashboard": get_cols_start(df_raw, ["K4H"])
+        }
+
+        dv = [
+            c for c in [
+                "Score_K5B_Improvement",
+                "Score_Overall"
+            ]
+            if c in df_raw.columns
+        ]
+
+        if not dv:
+            dv = get_cols_start(df_raw, ["K5B"])
+
+    else:
+        return None, None, "Jenis responden tidak dikenali untuk model SEM."
+
+    iv = {k: v for k, v in iv.items() if v}
+
+    if not iv:
+        return None, None, "SEM tidak dapat dijalankan kerana tiada konstruk IV yang sah dikesan."
+
+    if not dv:
+        return iv, None, (
+            "SEM tidak dapat dijalankan kerana DV tidak ditemui. "
+            "Untuk Klien, DV sesuai ialah K1O. Untuk Pegawai, DV sesuai ialah Score_K3A_Success atau K3A. "
+            "Untuk Warga JKM, DV sesuai ialah Score_K5B_Improvement, Score_Overall atau K5B."
+        )
+
+    return iv, dv, None
+
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🔗 Model SEM / Path Model Mengikut Jenis Responden")
+
+iv_spec, dv_cols, sem_warning = get_sem_spec(df_filtered_raw, selected_type)
+sem_result = None
+
+if sem_warning:
+    show_warning_box(
+        "SEM tidak dipaparkan",
+        html_escape(sem_warning)
+    )
+
+else:
+    sem_data = pd.DataFrame(index=df_filtered_raw.index)
+
+    for name, cols in iv_spec.items():
+        sem_data[name] = safe_mean(df_filtered_raw, cols)
+
+    sem_data["Outcome / DV"] = safe_mean(df_filtered_raw, dv_cols)
+    sem_data = sem_data.dropna()
+
+    valid_n_sem = len(sem_data)
+
+    if valid_n_sem < 30:
+        show_warning_box(
+            "SEM tidak cukup data sah",
+            f"""
+            Data sah selepas filter dan selepas membuang nilai kosong hanya
+            <b>{valid_n_sem}</b> responden.
+            Sistem mencadangkan minimum <b>30 responden</b> untuk path model eksploratori dashboard.
+            DV yang digunakan ialah:
+            <b>{html_escape(', '.join([str(x) for x in dv_cols]))}</b>.
+            """
+        )
+
+    else:
+        rows = []
+
+        for col in sem_data.columns:
+            if col == "Outcome / DV":
+                continue
+
+            beta = sem_data[col].corr(sem_data["Outcome / DV"])
+
+            rows.append({
+                "Laluan SEM": f"{col} → Outcome / DV",
+                "Konstruk IV": col,
+                "Path Coefficient β": beta,
+                "Kekuatan": "Kuat" if abs(beta) >= .70 else "Sederhana" if abs(beta) >= .40 else "Rendah"
+            })
+
+        sem_result = (
+            pd.DataFrame(rows)
+            .sort_values("Path Coefficient β", ascending=False)
+        )
+
+        render_chart(
+            alt_bar(
+                sem_result,
+                "Konstruk IV",
+                "Path Coefficient β",
+                f"Path Coefficient SEM: {selected_type} → Outcome"
+            )
+        )
+
+        show_audit(
+            "Jalan kira SEM / path model",
+            f"""
+            SEM ini hanya dijalankan apabila satu jenis responden dipilih.
+            Setiap konstruk IV dikira sebagai purata item konstruk tersebut.
+            DV dikira menggunakan:
+            <b>{html_escape(', '.join([str(x) for x in dv_cols]))}</b>.
+            Path coefficient β dianggarkan menggunakan korelasi piawai antara konstruk IV dan DV.
+            Sampel sah untuk SEM ialah <b>{valid_n_sem}</b> responden.
+            """
+        )
+
+        st.dataframe(sem_result, use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# INTERVENTION
+# ============================================================
+
+def detailed_intervention(zone, state, respondent_type, dim, score):
+    lokasi = location_text(zone, state, respondent_type)
+
+    if score < 3.4:
+        tahap = "Kritikal / Perlu Intervensi Segera"
+        tempoh = "3 bulan"
+        sasaran = min(5, score + 0.50)
+
+        cadangan = [
+            "Audit punca skor rendah berdasarkan item yang membentuk dimensi ini.",
+            "Coaching pegawai/unit berkaitan secara bersasar.",
+            "Pemantauan mingguan terhadap kes atau proses kerja berkaitan dimensi ini.",
+            "Sesi maklum balas berstruktur bersama kumpulan responden sasaran.",
+            "Tetapkan KPI mikro supaya skor meningkat secara berperingkat."
+        ]
+
+        rasional = (
+            f"Skor {score:.2f} berada di bawah 3.40 dan berisiko menjejaskan "
+            f"keberkesanan perkhidmatan bagi {lokasi}."
+        )
+
+    elif score < 4.0:
+        tahap = "Sederhana / Perlu Pengukuhan"
+        tempoh = "2 hingga 3 bulan"
+        sasaran = min(5, score + 0.30)
+
+        cadangan = [
+            "Latihan mikro bersasar berdasarkan item terendah.",
+            "Perkukuh komunikasi dan penyelarasan dalaman.",
+            "Pantau skor bulanan untuk menilai kesan perubahan.",
+            "Dokumentasikan amalan baik daripada lokasi yang skor lebih tinggi.",
+            "Gunakan sesi refleksi kes untuk kenal pasti halangan pelaksanaan."
+        ]
+
+        rasional = (
+            f"Skor {score:.2f} sederhana tetapi belum mencapai tahap kukuh 4.00 "
+            f"bagi {lokasi}."
+        )
+
+    else:
+        tahap = "Baik / Kekalkan dan Replikasi"
+        tempoh = "Pemantauan berkala"
+        sasaran = min(5, score + 0.10)
+
+        cadangan = [
+            "Kekalkan amalan sedia ada.",
+            "Dokumentasikan amalan terbaik.",
+            "Gunakan sebagai penanda aras dalaman.",
+            "Pemantauan berkala supaya prestasi tidak menurun.",
+            "Replikasi pendekatan kepada dimensi yang lebih rendah."
+        ]
+
+        rasional = (
+            f"Skor {score:.2f} menunjukkan dimensi ini berada pada tahap baik "
+            f"bagi {lokasi}."
+        )
+
+    return {
+        "Lokasi / Sasaran": lokasi,
+        "Dimensi": dim,
+        "Skor Semasa": score,
+        "Tahap": tahap,
+        "Tempoh": tempoh,
+        "Sasaran Skor": sasaran,
+        "Rasional": rasional,
+        "Cadangan": cadangan
+    }
+
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🛠️ Intervensi Bersasar Mengikut Filter")
+
+weak_dims = dim_summary.sort_values("Skor Purata", ascending=True).head(5)
+
+interventions = [
+    detailed_intervention(
+        selected_zone,
+        selected_state,
+        selected_type,
+        r["Dimensi"],
+        r["Skor Purata"]
+    )
+    for _, r in weak_dims.iterrows()
+]
+
+for item in interventions:
+    st.markdown(f"""
+    <div class="intervention">
+    <h3>{html_escape(item['Dimensi'])}</h3>
+    <p><b>Lokasi / sasaran:</b> {html_escape(item['Lokasi / Sasaran'])}</p>
+    <p>
+    <b>Skor semasa:</b> {item['Skor Semasa']:.2f} |
+    <b>Tahap:</b> {html_escape(item['Tahap'])} |
+    <b>Sasaran:</b> {item['Skor Semasa']:.2f} → {item['Sasaran Skor']:.2f} |
+    <b>Tempoh:</b> {html_escape(item['Tempoh'])}
+    </p>
+    <p><b>Rasional:</b> {html_escape(item['Rasional'])}</p>
+    <ol>{''.join([f"<li>{html_escape(x)}</li>" for x in item['Cadangan']])}</ol>
+    </div>
+    """, unsafe_allow_html=True)
+
+show_audit(
+    "Jalan kira intervensi",
+    f"""
+    Sistem memilih lima dimensi skor terendah selepas filter.
+    Tahap intervensi ditentukan menggunakan ambang:
+    skor < 3.40 = intervensi segera,
+    3.40–3.99 = pengukuhan,
+    ≥ 4.00 = kekalkan/replikasi.
+    Lokasi intervensi dibina daripada filter aktif:
+    <b>{html_escape(location_text(selected_zone, selected_state, selected_type))}</b>.
+    """
+)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# SIMULATION
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🔮 Simulasi Impak Intervensi")
+
+increase = st.slider(
+    "Andaian peningkatan skor dimensi selepas intervensi (%)",
+    1,
+    30,
+    10
+)
+
+sim_df = weak_dims[["Dimensi", "Skor Purata"]].copy()
+sim_df["Skor Selepas Intervensi"] = np.minimum(
+    5,
+    sim_df["Skor Purata"] * (1 + increase / 100)
+)
+
+sim_df["Perubahan Skor"] = sim_df["Skor Selepas Intervensi"] - sim_df["Skor Purata"]
+sim_df["Status Selepas"] = sim_df["Skor Selepas Intervensi"].apply(classify_score)
+
+sim_long = sim_df.melt(
+    id_vars=["Dimensi"],
+    value_vars=["Skor Purata", "Skor Selepas Intervensi"],
+    var_name="Senario",
+    value_name="Skor"
+)
+
+chart_sim = alt.Chart(
+    sim_long,
+    background="transparent"
+).mark_bar(
+    cornerRadiusTopLeft=9,
+    cornerRadiusTopRight=9
+).encode(
+    x=alt.X(
+        "Dimensi:N",
+        title=None,
+        axis=alt.Axis(labelAngle=-25)
+    ),
+    y=alt.Y(
+        "Skor:Q",
+        title="Skor",
+        scale=alt.Scale(domain=[0, 5])
+    ),
+    color=alt.Color(
+        "Senario:N",
+        scale=alt.Scale(
+            domain=[
+                "Skor Purata",
+                "Skor Selepas Intervensi"
+            ],
+            range=[
+                "#ff4d6d",
+                "#00f5d4"
+            ]
+        ),
+        legend=alt.Legend(orient="bottom")
+    ),
+    xOffset="Senario:N",
+    tooltip=[
+        "Dimensi:N",
+        "Senario:N",
+        alt.Tooltip("Skor:Q", format=".3f")
+    ]
+).properties(
+    title="Simulasi Sebelum dan Selepas Intervensi",
+    height=430,
+    background="transparent"
+)
+
+render_chart(dark_chart_base(chart_sim))
+
+show_audit(
+    "Jalan kira simulasi",
+    f"""
+    Formula simulasi:
+    <b>Skor Selepas = min(5.00, Skor Semasa × (1 + {increase}/100))</b>.
+    Nilai maksimum dihadkan kepada 5.00 kerana skala Likert maksimum ialah 5.
+    """
+)
+
+st.dataframe(sim_df, use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# MANAGEMENT SUMMARY
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🧾 Rumusan Pengurusan Automatik")
+
+top3 = weak_dims.head(3)
+
+summary_text = f"""
+Berdasarkan analisis semasa bagi {location_text(selected_zone, selected_state, selected_type)},
+sebanyak {n:,} responden telah dianalisis. Skor keseluruhan ialah {overall:.2f}, iaitu pada tahap
+{classify_score(overall)}.
+
+Tiga dimensi yang memerlukan perhatian utama ialah
+{top3.iloc[0]['Dimensi']} ({top3.iloc[0]['Skor Purata']:.2f}),
+{top3.iloc[1]['Dimensi']} ({top3.iloc[1]['Skor Purata']:.2f}) dan
+{top3.iloc[2]['Dimensi']} ({top3.iloc[2]['Skor Purata']:.2f}).
+
+{zone_story}
+{state_story}
+{resp_story}
+
+Intervensi bersasar dicadangkan kepada kumpulan/lokasi ini dengan fokus kepada dimensi terendah,
+diikuti pemantauan berkala dan simulasi peningkatan skor.
+"""
+
+st.markdown(f"""
+<div class="note-blue">
+{html_escape(summary_text).replace(chr(10), "<br>")}
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================
+# HTML REPORT
+# ============================================================
+
+def dataframe_to_html_table(df_table):
+    return df_table.to_html(
+        index=False,
+        border=0,
+        classes="report-table",
+        escape=True
+    )
+
+
+def build_html_report():
+    respondent_html = dataframe_to_html_table(respondent_dist)
+    dim_html = dataframe_to_html_table(dim_summary)
+    reaim_html = dataframe_to_html_table(reaim_df)
+    group_html = dataframe_to_html_table(group_df)
+    sim_html = dataframe_to_html_table(sim_df)
+
+    if sem_result is not None:
+        sem_html = dataframe_to_html_table(sem_result)
+    else:
+        sem_html = """
+        <p>SEM tidak dipaparkan kerana Jenis Responden = Semua, DV tidak wujud,
+        atau data sah tidak mencukupi.</p>
+        """
+
+    intervention_html = ""
+
+    for item in interventions:
+        intervention_html += f"""
+        <div class="box">
+            <h3>{html_escape(item['Dimensi'])}</h3>
+            <p><b>Lokasi/Sasaran:</b> {html_escape(item['Lokasi / Sasaran'])}</p>
+            <p>
+            <b>Skor Semasa:</b> {item['Skor Semasa']:.2f} |
+            <b>Tahap:</b> {html_escape(item['Tahap'])} |
+            <b>Sasaran:</b> {item['Skor Semasa']:.2f} → {item['Sasaran Skor']:.2f}
+            </p>
+            <p><b>Rasional:</b> {html_escape(item['Rasional'])}</p>
+            <ol>{''.join([f"<li>{html_escape(x)}</li>" for x in item['Cadangan']])}</ol>
+        </div>
+        """
+
+    report = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="utf-8">
+    <title>Laporan JKM DSS-IIS</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 34px;
+            color: #111827;
+            line-height: 1.48;
+        }}
+        h1 {{
+            color: #102542;
+            border-bottom: 5px solid #ffb703;
+            padding-bottom: 12px;
+        }}
+        h2 {{
+            margin-top: 32px;
+            color: #102542;
+            border-left: 8px solid #118ab2;
+            padding-left: 12px;
+        }}
+        .meta {{
+            background: #eef6ff;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 6px solid #118ab2;
+        }}
+        .box {{
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 6px solid #ffb703;
+            margin: 14px 0;
+        }}
+        .kpi {{
+            display: inline-block;
+            width: 18%;
+            margin: 6px;
+            padding: 14px;
+            background: #102542;
+            color: white;
+            border-radius: 14px;
+            vertical-align: top;
+        }}
+        .kpi b {{
+            font-size: 22px;
+            color: #ffd166;
+        }}
+        table.report-table {{
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 12px;
+        }}
+        table.report-table th {{
+            background: #102542;
+            color: white;
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+        }}
+        table.report-table td {{
+            padding: 7px;
+            border: 1px solid #e5e7eb;
+        }}
+        .audit {{
+            background: #fff7d6;
+            padding: 14px;
+            border-left: 6px solid #ffb703;
+            border-radius: 10px;
+            margin-top: 10px;
+        }}
+    </style>
+    </head>
+    <body>
+        <button onclick="window.print()" style="padding:12px 18px;background:#ffb703;border:0;border-radius:10px;font-weight:bold;">
+            Print / Save as PDF
+        </button>
+
+        <h1>Laporan JKM Psychological Services DSS-IIS</h1>
+
+        <div class="meta">
+            <b>Dijana pada:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br>
+            <b>Filter:</b> Zon = {html_escape(selected_zone)},
+            Negeri = {html_escape(selected_state)},
+            Jenis Responden = {html_escape(selected_type)}
+        </div>
+
+        <h2>1. Pengenalan</h2>
+        <p>{html_escape(intro_text).replace(chr(10), '<br>')}</p>
+
+        <h2>2. Profil Responden</h2>
+        {respondent_html}
+
+        <h2>3. KPI Utama</h2>
+        <div class="kpi">Bil. Responden<br><b>{n:,}</b></div>
+        <div class="kpi">Skor Keseluruhan<br><b>{overall_display}</b></div>
+        <div class="kpi">% Baik<br><b>{high_pct:.1f}%</b></div>
+        <div class="kpi">% Intervensi<br><b>{risk_pct:.1f}%</b></div>
+        <div class="kpi">Cronbach Alpha<br><b>{alpha_display}</b></div>
+
+        <div class="audit">
+        <b>Jalan kira KPI:</b> Skor keseluruhan dikira sebagai purata konstruk sah.
+        % Baik ialah skor ≥ 4.00. % Intervensi ialah skor < 3.40.
+        </div>
+
+        <h2>4. Analisis Dimensi</h2>
+        {dim_html}
+
+        <h2>5. Analisis Perbandingan Kategori</h2>
+        {group_html}
+
+        <h2>5A. Dapatan Automatik Mengikut Zon, Negeri dan Jenis Responden</h2>
+        <div class="box">
+            <p><b>Analisis Zon:</b> {html_escape(zone_story)}</p>
+            <p><b>Analisis Negeri:</b> {html_escape(state_story)}</p>
+            <p><b>Analisis Jenis Responden:</b> {html_escape(resp_story)}</p>
+        </div>
+
+        <h2>6. RE-AIM</h2>
+        {reaim_html}
+
+        <h2>7. SEM / Path Model</h2>
+        {sem_html}
+
+        <h2>8. Intervensi Bersasar</h2>
+        {intervention_html}
+
+        <h2>9. Simulasi Impak</h2>
+        {sim_html}
+
+        <h2>10. Rumusan Pengurusan</h2>
+        <div class="box">{html_escape(summary_text).replace(chr(10), '<br>')}</div>
+    </body>
+    </html>
+    """
+
+    return report
+
+
 st.markdown('<div class="section">', unsafe_allow_html=True)
 st.markdown("## 🖨️ Laporan Lengkap: Download / Print")
-summary_text = (
-    f"Secara keseluruhan, skor purata sistem ialah {overall_display} dan diklasifikasikan sebagai {classify_score(overall)}. "
-    f"Dimensi paling memerlukan perhatian ialah {lowest_dim} dengan skor {lowest_score:.2f}. "
-    f"Cadangan utama ialah melaksanakan intervensi bersasar berdasarkan zon, negeri dan jenis responden yang menunjukkan skor paling rendah."
+
+report_html = build_html_report()
+html_bytes = report_html.encode("utf-8")
+
+show_audit(
+    "Kandungan laporan",
+    """
+    Laporan merangkumi pengenalan automatik, profil responden, KPI, jalan kira,
+    analisis dimensi, perbandingan zon/negeri/responden, RE-AIM, SEM/path model,
+    intervensi bersasar, simulasi dan rumusan pengurusan.
+    Download HTML, buka dalam browser dan tekan Ctrl+P untuk print atau Save as PDF.
+    """
 )
-report_html = build_html_report(
-    "Laporan JKM Psychological Services DSS-IIS",
-    intro_text,
-    respondent_dist,
-    kpis,
-    dim_summary,
-    zone_sum,
-    state_sum,
-    resp_sum,
-    theme_df,
-    summary_text
-)
-st.markdown(f'<div class="note-blue">{html_escape(summary_text)}</div>', unsafe_allow_html=True)
+
 st.download_button(
     "📄 Download Laporan HTML untuk Print / Save as PDF",
-    data=report_html.encode("utf-8"),
+    data=html_bytes,
     file_name=f"Laporan_JKM_DSS_{selected_zone}_{selected_state}_{selected_type}.html".replace(" ", "_"),
     mime="text/html"
 )
+
 st.markdown('</div>', unsafe_allow_html=True)
