@@ -2510,17 +2510,53 @@ def build_html_report():
         <h2>2. Profil Responden</h2>
         {respondent_html}
 
-        <h2>3. KPI Utama</h2>
-        <div class="kpi">Bil. Responden<br><b>{n:,}</b></div>
-        <div class="kpi">Skor Keseluruhan<br><b>{overall_display}</b></div>
-        <div class="kpi">% Baik<br><b>{high_pct:.1f}%</b></div>
-        <div class="kpi">% Intervensi<br><b>{risk_pct:.1f}%</b></div>
-        <div class="kpi">Cronbach Alpha<br><b>{alpha_display}</b></div>
+       <h2>3. Indikator Keberkesanan Kaunseling JKM</h2>
 
-        <div class="audit">
-        <b>Jalan kira KPI:</b> Skor keseluruhan dikira sebagai purata konstruk sah. % Baik ialah skor ≥ 4.00.
-        % Intervensi ialah skor < 3.40.
-        </div>
+<div class="kpi">IKK<br><b>{ikk_display}</b><br>{effectiveness_status(ikk_score)}</div>
+<div class="kpi">S1 Klien<br><b>{s1_display}</b><br>Outcome / impak klien</div>
+<div class="kpi">S2 Pegawai<br><b>{s2_display}</b><br>Pelaksanaan intervensi</div>
+<div class="kpi">S3 Organisasi<br><b>{s3_display}</b><br>Sokongan sistem</div>
+<div class="kpi">Risiko Intervensi<br><b>{risk_pct:.1f}%</b><br>Skor &lt; 3.40</div>
+
+<div class="audit">
+<b>Jalan kira IKK:</b><br>
+IKK = 0.50(S1) + 0.30(S2) + 0.20(S3). Jika sesuatu komponen tidak tersedia selepas filter,
+sistem menggunakan pemberat adaptif. Nilai semasa: S1 = {s1_display}, S2 = {s2_display},
+S3 = {s3_display}. Maka IKK = {ikk_display}, iaitu {effectiveness_status(ikk_score)}.
+</div>
+
+<h2>3A. Maklumat Data</h2>
+<div class="box">
+<p><b>Jumlah Responden:</b> {n:,}</p>
+<p><b>Skor Keseluruhan:</b> {overall_display}</p>
+<p><b>Cronbach Alpha:</b> {alpha_display}</p>
+<p><b>Zon:</b> {html_escape(selected_zone)}</p>
+<p><b>Negeri:</b> {html_escape(selected_state)}</p>
+<p><b>Jenis Responden:</b> {html_escape(selected_type)}</p>
+</div>
+
+<h2>3B. Penilaian Mengikut Objektif Kajian</h2>
+
+<div class="box">
+<h3>O1: Menilai keberkesanan perkhidmatan psikologi dan kaunseling JKM</h3>
+<p>Berdasarkan filter semasa, IKK ialah <b>{ikk_display}</b> dengan status
+<b>{effectiveness_status(ikk_score)}</b>.</p>
+</div>
+
+<div class="box">
+<h3>O2: Mengenal pasti faktor yang menyumbang kepada keberkesanan atau ketidakberkesanan perkhidmatan</h3>
+<p>Faktor penyumbang dikenal pasti melalui dimensi tertinggi, analisis perbandingan, CMO dan path model eksploratori jika data mencukupi.</p>
+</div>
+
+<div class="box">
+<h3>O3: Mengenal pasti kelemahan dalam pelaksanaan perkhidmatan psikologi dan kaunseling JKM</h3>
+<p>Kelemahan dikenal pasti melalui dimensi terendah, tema kualitatif dominan dan komponen RE-AIM/CMO yang menunjukkan jurang pelaksanaan.</p>
+</div>
+
+<div class="box">
+<h3>O4: Merumuskan cadangan penambahbaikan perkhidmatan psikologi dan kaunseling JKM</h3>
+<p>Cadangan penambahbaikan dijana berdasarkan dimensi terendah, dapatan kualitatif, RE-AIM, CMO dan simulasi intervensi.</p>
+</div>
 
         <h2>4. Analisis Dimensi</h2>
         {dim_html}
