@@ -1442,36 +1442,87 @@ sim_long = sim_df.melt(
     value_name="Skor"
 )
 
-chart_sim = alt.Chart(sim_long).mark_bar(cornerRadiusTopLeft=7, cornerRadiusTopRight=7).encode(
-    x=alt.X("Dimensi:N", title=None, axis=alt.Axis(labelAngle=-25)),
-    y=alt.Y("Skor:Q", title="Skor", scale=alt.Scale(domain=[0, 5])),
-    color=alt.Color(
-        "Senario:N",
-        scale=alt.Scale(
-            domain=["Skor Purata", "Skor Selepas Intervensi"],
-            range=["#ff4d6d", "#00f5d4"]
+chart_sim_bar = (
+    alt.Chart(sim_long)
+    .mark_bar(
+        cornerRadiusTopLeft=10,
+        cornerRadiusTopRight=10
+    )
+    .encode(
+        x=alt.X(
+            "Dimensi:N",
+            title=None,
+            axis=alt.Axis(labelAngle=-25, labelLimit=260)
         ),
-        legend=alt.Legend(orient="bottom")
-    ),
-    xOffset="Senario:N",
-    tooltip=["Dimensi:N", "Senario:N", alt.Tooltip("Skor:Q", format=".3f")]
+        y=alt.Y(
+            "Skor:Q",
+            title="Skor",
+            scale=alt.Scale(domain=[0, 5])
+        ),
+        color=alt.Color(
+            "Senario:N",
+            scale=alt.Scale(
+                domain=["Skor Purata", "Skor Selepas Intervensi"],
+                range=["#ff4d6d", "#00f5d4"]
+            ),
+            legend=alt.Legend(orient="bottom", title="Senario")
+        ),
+        xOffset="Senario:N",
+        tooltip=[
+            alt.Tooltip("Dimensi:N", title="Dimensi"),
+            alt.Tooltip("Senario:N", title="Senario"),
+            alt.Tooltip("Skor:Q", title="Skor", format=".3f")
+        ]
+    )
+)
+
+chart_sim_text = (
+    alt.Chart(sim_long)
+    .mark_text(
+        dy=-8,
+        color="#ffffff",
+        fontWeight="bold",
+        fontSize=13
+    )
+    .encode(
+        x=alt.X("Dimensi:N", axis=alt.Axis(labelAngle=-25)),
+        y=alt.Y("Skor:Q"),
+        xOffset="Senario:N",
+        text=alt.Text("Skor:Q", format=".2f")
+    )
+)
+
+chart_sim_final = (
+    chart_sim_bar + chart_sim_text
 ).properties(
     title="Simulasi Sebelum dan Selepas Intervensi",
-    height=430
+    height=460,
+    background="transparent"
+).configure_view(
+    strokeOpacity=0
 ).configure_axis(
     labelColor="#ffffff",
     titleColor="#ffffff",
-    gridColor="rgba(255,255,255,0.25)"
+    gridColor="rgba(255,255,255,0.22)",
+    domainColor="rgba(255,255,255,0.45)",
+    tickColor="rgba(255,255,255,0.45)",
+    labelFontSize=12,
+    titleFontSize=13
 ).configure_title(
     color="#ffffff",
-    fontSize=17,
-    fontWeight="bold"
+    fontSize=19,
+    fontWeight="bold",
+    anchor="start"
 ).configure_legend(
     labelColor="#ffffff",
-    titleColor="#ffffff"
-).configure_view(strokeOpacity=0)
+    titleColor="#ffffff",
+    orient="bottom",
+    symbolSize=180,
+    labelFontSize=12,
+    titleFontSize=13
+)
 
-st.altair_chart(chart_sim, use_container_width=True)
+st.altair_chart(chart_sim_final, use_container_width=True)
 
 show_audit(
     "Jalan kira simulasi",
