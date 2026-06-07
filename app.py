@@ -886,11 +886,15 @@ s1_display = f"{s1_score:.1f}%" if not pd.isna(s1_score) else "NA"
 s2_display = f"{s2_score:.1f}%" if not pd.isna(s2_score) else "NA"
 s3_display = f"{s3_score:.1f}%" if not pd.isna(s3_score) else "NA"
 
+# ============================================================
+# PAPARAN KPI KEBERKESANAN + MAKLUMAT DATA
+# ============================================================
+
 st.markdown("## 🎯 Indikator Keberkesanan Kaunseling JKM")
 
 k1, k2, k3, k4, k5 = st.columns(5)
 
-kpis = [
+kpis_ikk = [
     ("IKK", ikk_display, effectiveness_status(ikk_score)),
     ("S1 Klien", s1_display, "Outcome / impak klien"),
     ("S2 Pegawai", s2_display, "Pelaksanaan intervensi"),
@@ -898,7 +902,7 @@ kpis = [
     ("Risiko Intervensi", f"{risk_pct:.1f}%", "Skor < 3.40")
 ]
 
-for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis):
+for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis_ikk):
     with col:
         st.markdown(f"""
         <div class="kpi">
@@ -923,9 +927,13 @@ info_items = [
 for col, (label, value) in zip([m1, m2, m3, m4, m5], info_items):
     with col:
         st.markdown(f"""
-        <div class="kpi" style="min-height:115px; padding:18px;">
+        <div class="kpi" style="
+            min-height:115px;
+            padding:18px;
+            background:linear-gradient(135deg, rgba(0,245,212,.18), rgba(255,255,255,.07));
+        ">
             <div class="label">{label}</div>
-            <div class="value" style="font-size:1.65rem;">{value}</div>
+            <div class="value" style="font-size:1.55rem;">{value}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -950,17 +958,6 @@ show_audit(
     sebagai maklumat sokongan, tetapi bukan lagi KPI keberkesanan utama.
     """
 )
-
-for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis):
-    with col:
-        st.markdown(f"""
-        <div class="kpi">
-            <div class="label">{label}</div>
-            <div class="value">{value}</div>
-            <div class="sub">{sub}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
 show_audit(
     "Jalan kira KPI",
     f"""
