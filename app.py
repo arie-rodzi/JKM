@@ -912,20 +912,22 @@ st.markdown("### 📋 Maklumat Data")
 
 m1, m2, m3, m4, m5 = st.columns(5)
 
-with m1:
-    st.metric("Jumlah Responden", f"{n:,}")
+info_items = [
+    ("Jumlah Responden", f"{n:,}"),
+    ("Skor Keseluruhan", overall_display),
+    ("Cronbach Alpha", alpha_display),
+    ("Zon", selected_zone),
+    ("Negeri", selected_state)
+]
 
-with m2:
-    st.metric("Skor Keseluruhan", overall_display)
-
-with m3:
-    st.metric("Cronbach Alpha", alpha_display)
-
-with m4:
-    st.metric("Zon", selected_zone)
-
-with m5:
-    st.metric("Negeri", selected_state)
+for col, (label, value) in zip([m1, m2, m3, m4, m5], info_items):
+    with col:
+        st.markdown(f"""
+        <div class="kpi" style="min-height:115px; padding:18px;">
+            <div class="label">{label}</div>
+            <div class="value" style="font-size:1.65rem;">{value}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 show_audit(
     "Jalan kira Indikator Keberkesanan Kaunseling",
