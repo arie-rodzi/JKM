@@ -861,10 +861,87 @@ dim_summary = df[dimension_cols].mean().reset_index().rename(columns={"index": "
 dim_summary["Status"] = dim_summary["Skor Purata"].apply(classify_score)
 dim_summary = dim_summary.sort_values("Skor Purata", ascending=True)
 
-st.altair_chart(
-    alt_horizontal_bar(dim_summary, "Dimensi", "Skor Purata", "Skor Purata Mengikut Dimensi / Konstruk"),
-    use_container_width=True
+dim_chart_data = dim_summary.copy()
+dim_chart_data["Status"] = dim_chart_data["Skor Purata"].apply(
+    lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
 )
+
+dim_chart = alt.Chart(dim_chart_data).mark_bar(
+    cornerRadius=10
+).encode(
+    y=alt.Y(
+        "Dimensi:N",
+        sort=alt.SortField("Skor Purata", order="ascending"),
+        title=None,
+        axis=alt.Axis(labelLimit=420)
+    ),
+    x=alt.X(
+        "Skor Purata:Q",
+        title="Skor Purata",
+        scale=alt.Scale(domain=[0, 5])
+    ),
+    color=alt.Color(
+        "Status:N",
+        scale=alt.Scale(
+            domain=["Baik", "Sederhana", "Intervensi"],
+            range=["#00f5d4", "#fee440", "#ff4d6d"]
+        ),
+        legend=alt.Legend(title="Status", orient="bottom")
+    ),
+    tooltip=[
+        alt.Tooltip("Dimensi:N", title="Dimensi"),
+        alt.Tooltip("Skor Purata:Q", title="Skor", format=".3f"),
+        alt.Tooltip("Status:N", title="Status")
+    ]
+)
+
+dim_text = alt.Chart(dim_chart_data).mark_text(
+    align="left",
+    dx=8,
+    color="#ffffff",
+    fontWeight="bold",
+    fontSize=14
+).encode(
+    y=alt.Y(
+        "Dimensi:N",
+        sort=alt.SortField("Skor Purata", order="ascending")
+    ),
+    x=alt.X("Skor Purata:Q"),
+    text=alt.Text("Skor Purata:Q", format=".2f")
+)
+
+dim_final_chart = (dim_chart + dim_text).properties(
+    title="Skor Purata Mengikut Dimensi / Konstruk",
+    height=560,
+    background="transparent"
+).configure(
+    background="transparent"
+).configure_view(
+    strokeOpacity=0,
+    fill="transparent"
+).configure_axis(
+    labelColor="#ffffff",
+    titleColor="#ffffff",
+    gridColor="rgba(255,255,255,0.22)",
+    domainColor="rgba(255,255,255,0.45)",
+    tickColor="rgba(255,255,255,0.45)",
+    labelFontSize=12,
+    titleFontSize=13
+).configure_title(
+    color="#ffffff",
+    fontSize=19,
+    fontWeight="bold",
+    anchor="start"
+).configure_legend(
+    labelColor="#ffffff",
+    titleColor="#ffffff",
+    orient="bottom",
+    symbolSize=180,
+    labelFontSize=12,
+    titleFontSize=13
+)
+
+st.altair_chart(dim_final_chart, use_container_width=True)
 
 lowest_dim = dim_summary.iloc[0]["Dimensi"]
 lowest_score = dim_summary.iloc[0]["Skor Purata"]
