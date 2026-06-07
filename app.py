@@ -1264,6 +1264,20 @@ o1,o2,o3,o4 = st.tabs([
     "O4 Cadangan"
 ])
 
+# ============================================================
+# PRE-CALCULATE DIMENSION SUMMARY FOR OBJECTIVE REPORT
+# ============================================================
+
+dim_summary = (
+    df[dimension_cols]
+    .mean()
+    .reset_index()
+    .rename(columns={"index": "Dimensi", 0: "Skor Purata"})
+)
+
+dim_summary["Status"] = dim_summary["Skor Purata"].apply(classify_score)
+dim_summary = dim_summary.sort_values("Skor Purata", ascending=True)
+
 with o1:
 
     st.success(f"""
