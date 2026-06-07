@@ -1062,73 +1062,119 @@ show_audit(
 st.dataframe(reaim_df, use_container_width=True, hide_index=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
+# ============================================================
+# CMO QUALITATIVE ANALYSIS
+# ============================================================
+
 st.markdown('<div class="section">', unsafe_allow_html=True)
 st.markdown("## 🧩 Analisis Kualitatif CMO")
 
 if df_qual.empty:
-    show_warning_box("Tiada data kualitatif", "Tiada data kualitatif dikesan untuk filter semasa.")
+    show_warning_box(
+        "Tiada data kualitatif",
+        "Tiada data kualitatif dikesan untuk filter semasa."
+    )
 else:
-    cmo_cols = [c for c in ["CMO_Context", "CMO_Mechanism", "CMO_Outcome", "RE_AIM_Tag"] if c in df_qual.columns]
+    cmo_cols = [
+        c for c in ["CMO_Context", "CMO_Mechanism", "CMO_Outcome", "RE_AIM_Tag"]
+        if c in df_qual.columns
+    ]
+
     if not cmo_cols:
-        show_warning_box("Kolum CMO tidak ditemui", "Data kualitatif wujud tetapi kolum CMO tidak ditemui.")
+        show_warning_box(
+            "Kolum CMO tidak ditemui",
+            "Data kualitatif wujud tetapi kolum CMO tidak ditemui."
+        )
     else:
         for c in cmo_cols:
-            counts = df_qual[c].dropna().astype(str).value_counts().head(10).reset_index()
+            counts = (
+                df_qual[c]
+                .dropna()
+                .astype(str)
+                .value_counts()
+                .head(10)
+                .reset_index()
+            )
             counts.columns = ["Tema", "Bilangan"]
+
             if counts.empty:
                 continue
 
             st.markdown(f"### {c}")
-            chart_cmo = (
-    alt.Chart(counts)
-    .mark_bar(
-        cornerRadiusTopLeft=10,
-        cornerRadiusTopRight=10
-    )
-    .encode(
-        x=alt.X(
-            "Tema:N",
-            sort="-y",
-            title=None,
-            axis=alt.Axis(labelAngle=-25, labelLimit=260)
-        ),
-        y=alt.Y(
-            "Bilangan:Q",
-            title="Bilangan"
-        ),
-        color=alt.Color(
-            "Tema:N",
-            legend=None,
-            scale=alt.Scale(scheme="category20")
-        ),
-        tooltip=[
-            alt.Tooltip("Tema:N", title="Tema"),
-            alt.Tooltip("Bilangan:Q", title="Bilangan")
-        ]
-    )
-)
 
-st.altair_chart(
-    chart_cmo.properties(
-        title=f"Taburan Tema {c}",
-        height=420
-    ),
-    use_container_width=True
-)
-top_theme = counts.iloc[0]["Tema"]
-top_count = counts.iloc[0]["Bilangan"]
+            chart_cmo = (
+                alt.Chart(counts)
+                .mark_bar(
+                    cornerRadiusTopLeft=10,
+                    cornerRadiusTopRight=10
+                )
+                .encode(
+                    x=alt.X(
+                        "Tema:N",
+                        sort="-y",
+                        title=None,
+                        axis=alt.Axis(labelAngle=-25, labelLimit=260)
+                    ),
+                    y=alt.Y(
+                        "Bilangan:Q",
+                        title="Bilangan"
+                    ),
+                    color=alt.Color(
+                        "Tema:N",
+                        legend=None,
+                        scale=alt.Scale(scheme="category20")
+                    ),
+                    tooltip=[
+                        alt.Tooltip("Tema:N", title="Tema"),
+                        alt.Tooltip("Bilangan:Q", title="Bilangan")
+                    ]
+                )
+                .properties(
+                    title=f"Taburan Tema {c}",
+                    height=420,
+                    background="transparent"
+                )
+                .configure_view(
+                    strokeOpacity=0
+                )
+                .configure_axis(
+                    labelColor="#ffffff",
+                    titleColor="#ffffff",
+                    gridColor="rgba(255,255,255,0.22)",
+                    domainColor="rgba(255,255,255,0.45)",
+                    tickColor="rgba(255,255,255,0.45)",
+                    labelFontSize=12,
+                    titleFontSize=13
+                )
+                .configure_title(
+                    color="#ffffff",
+                    fontSize=19,
+                    fontWeight="bold",
+                    anchor="start"
+                )
+            )
+
+            st.altair_chart(chart_cmo, use_container_width=True)
+
+            top_theme = counts.iloc[0]["Tema"]
+            top_count = counts.iloc[0]["Bilangan"]
 
             show_audit(
                 f"Jalan kira tema {c}",
                 f"""
                 Sistem mengira kekerapan setiap tema dalam kolum <b>{html_escape(c)}</b>.
-                Tema tertinggi ialah <b>{html_escape(top_theme)}</b> dengan <b>{int(top_count)}</b> sebutan.
+                Tema tertinggi ialah <b>{html_escape(top_theme)}</b> dengan
+                <b>{int(top_count)}</b> sebutan.
                 """
             )
+
             st.dataframe(counts, use_container_width=True, hide_index=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
+# ============================================================
+# SEM / PATH MODEL
+# ============================================================
 
 def get_sem_spec(df_raw, selected_type):
     if selected_type == "Semua":
@@ -1147,8 +1193,12 @@ def get_sem_spec(df_raw, selected_type):
             "Kesesuaian Intervensi": get_cols_start(df_raw, ["K2E"])
         }
         dv = get_cols_start(df_raw, ["K1O"])
+
         if not dv:
-            dv = [c for c in ["Score_Core_Outcome", "Score_Overall", "Score_T1_Outcome"] if c in df_raw.columns]
+            dv = [
+                c for c in ["Score_Core_Outcome", "Score_Overall", "Score_T1_Outcome"]
+                if c in df_raw.columns
+            ]
 
     elif selected_type == "Pegawai":
         iv = {
@@ -1158,7 +1208,11 @@ def get_sem_spec(df_raw, selected_type):
             "Kolaborasi Dalaman": get_cols_start(df_raw, ["K4B"]),
             "Kualiti Penyampaian": get_cols_start(df_raw, ["K4C"])
         }
-        dv = [c for c in ["Score_K3A_Success", "Score_Overall"] if c in df_raw.columns]
+        dv = [
+            c for c in ["Score_K3A_Success", "Score_Overall"]
+            if c in df_raw.columns
+        ]
+
         if not dv:
             dv = get_cols_start(df_raw, ["K3A"])
 
@@ -1170,22 +1224,30 @@ def get_sem_spec(df_raw, selected_type):
             "Koordinasi Sistem": get_cols_start(df_raw, ["K4G"]),
             "Data & Dashboard": get_cols_start(df_raw, ["K4H"])
         }
-        dv = [c for c in ["Score_K5B_Improvement", "Score_Overall"] if c in df_raw.columns]
+        dv = [
+            c for c in ["Score_K5B_Improvement", "Score_Overall"]
+            if c in df_raw.columns
+        ]
+
         if not dv:
             dv = get_cols_start(df_raw, ["K5B"])
+
     else:
         return None, None, "Jenis responden tidak dikenali untuk model SEM."
 
     iv = {k: v for k, v in iv.items() if v}
 
     if not iv:
-        return None, None, "SEM tidak dapat dijalankan kerana tiada konstruk IV yang sah dikesan."
+        return None, None, (
+            "SEM tidak dapat dijalankan kerana tiada konstruk IV yang sah dikesan."
+        )
 
     if not dv:
         return iv, None, (
             "SEM tidak dapat dijalankan kerana DV tidak ditemui. "
-            "Untuk Klien, DV sesuai ialah K1O. Untuk Pegawai, DV sesuai ialah Score_K3A_Success atau K3A. "
-            "Untuk Warga JKM, DV sesuai ialah Score_K5B_Improvement, Score_Overall atau K5B."
+            "Untuk Klien, DV sesuai ialah K1O. Untuk Pegawai, DV sesuai ialah "
+            "Score_K3A_Success atau K3A. Untuk Warga JKM, DV sesuai ialah "
+            "Score_K5B_Improvement, Score_Overall atau K5B."
         )
 
     return iv, dv, None
@@ -1198,11 +1260,16 @@ iv_spec, dv_cols, sem_warning = get_sem_spec(df_filtered_raw, selected_type)
 sem_result = None
 
 if sem_warning:
-    show_warning_box("SEM tidak dipaparkan", html_escape(sem_warning))
+    show_warning_box(
+        "SEM tidak dipaparkan",
+        html_escape(sem_warning)
+    )
 else:
     sem_data = pd.DataFrame(index=df_filtered_raw.index)
+
     for name, cols in iv_spec.items():
         sem_data[name] = safe_mean(df_filtered_raw, cols)
+
     sem_data["Outcome / DV"] = safe_mean(df_filtered_raw, dv_cols)
     sem_data = sem_data.dropna()
 
@@ -1212,28 +1279,45 @@ else:
         show_warning_box(
             "SEM tidak cukup data sah",
             f"""
-            Data sah selepas filter dan selepas membuang nilai kosong hanya <b>{valid_n_sem}</b> responden.
-            Sistem mencadangkan minimum <b>30 responden</b> untuk path model eksploratori dashboard.
-            DV yang digunakan ialah: <b>{html_escape(', '.join([str(x) for x in dv_cols]))}</b>.
+            Data sah selepas filter dan selepas membuang nilai kosong hanya
+            <b>{valid_n_sem}</b> responden. Sistem mencadangkan minimum
+            <b>30 responden</b> untuk path model eksploratori dashboard.
+            DV yang digunakan ialah:
+            <b>{html_escape(', '.join([str(x) for x in dv_cols]))}</b>.
             """
         )
     else:
         rows = []
+
         for col in sem_data.columns:
             if col == "Outcome / DV":
                 continue
+
             beta = sem_data[col].corr(sem_data["Outcome / DV"])
+
             rows.append({
                 "Laluan SEM": f"{col} → Outcome / DV",
                 "Konstruk IV": col,
                 "Path Coefficient β": beta,
-                "Kekuatan": "Kuat" if abs(beta) >= .70 else "Sederhana" if abs(beta) >= .40 else "Rendah"
+                "Kekuatan": (
+                    "Kuat" if abs(beta) >= .70
+                    else "Sederhana" if abs(beta) >= .40
+                    else "Rendah"
+                )
             })
 
-        sem_result = pd.DataFrame(rows).sort_values("Path Coefficient β", ascending=False)
+        sem_result = (
+            pd.DataFrame(rows)
+            .sort_values("Path Coefficient β", ascending=False)
+        )
 
         st.altair_chart(
-            alt_bar(sem_result, "Konstruk IV", "Path Coefficient β", f"Path Coefficient SEM: {selected_type} → Outcome"),
+            alt_bar(
+                sem_result,
+                "Konstruk IV",
+                "Path Coefficient β",
+                f"Path Coefficient SEM: {selected_type} → Outcome"
+            ),
             use_container_width=True
         )
 
@@ -1241,10 +1325,12 @@ else:
             "Jalan kira SEM / path model",
             f"""
             SEM ini hanya dijalankan apabila satu jenis responden dipilih.
-            Setiap konstruk IV dikira sebagai purata item konstruk tersebut. DV dikira menggunakan:
+            Setiap konstruk IV dikira sebagai purata item konstruk tersebut.
+            DV dikira menggunakan:
             <b>{html_escape(', '.join([str(x) for x in dv_cols]))}</b>.
-            Path coefficient β dianggarkan menggunakan korelasi piawai antara konstruk IV dan DV.
-            Sampel sah untuk SEM ialah <b>{valid_n_sem}</b> responden.
+            Path coefficient β dianggarkan menggunakan korelasi piawai antara
+            konstruk IV dan DV. Sampel sah untuk SEM ialah
+            <b>{valid_n_sem}</b> responden.
             """
         )
 
