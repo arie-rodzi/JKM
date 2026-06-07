@@ -425,6 +425,67 @@ def alt_bar(df_chart, x, y, title, sort="-y", height=430):
         lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
     )
 
+    base = alt.Chart(data).encode(
+        x=alt.X(f"{x}:N", sort=sort, title=None, axis=alt.Axis(labelAngle=-25)),
+        y=alt.Y(f"{y}:Q", title="Skor / Nilai"),
+        tooltip=[
+            alt.Tooltip(f"{x}:N", title=x),
+            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
+            alt.Tooltip("Status:N")
+        ]
+    )
+
+    bar = base.mark_bar(cornerRadiusTopLeft=9, cornerRadiusTopRight=9).encode(
+        color=alt.Color(
+            "Status:N",
+            scale=alt.Scale(
+                domain=["Baik", "Sederhana", "Intervensi"],
+                range=["#00f5d4", "#fee440", "#ff4d6d"]
+            ),
+            legend=alt.Legend(title="Status", orient="bottom")
+        )
+    )
+
+    text = base.mark_text(
+        dy=-9,
+        color="#ffffff",
+        fontWeight="bold",
+        fontSize=13
+    ).encode(
+        text=alt.Text(f"{y}:Q", format=".2f")
+    )
+
+    return (bar + text).properties(
+        title=title,
+        height=height,
+        background="transparent"
+    ).configure(
+        background="transparent"
+    ).configure_view(
+        strokeOpacity=0,
+        fill="transparent"
+    ).configure_axis(
+        labelColor="#ffffff",
+        titleColor="#ffffff",
+        gridColor="rgba(255,255,255,0.20)",
+        domainColor="rgba(255,255,255,0.50)",
+        tickColor="rgba(255,255,255,0.50)",
+        labelFontSize=12,
+        titleFontSize=13
+    ).configure_title(
+        color="#ffffff",
+        fontSize=18,
+        fontWeight="bold",
+        anchor="start"
+    ).configure_legend(
+        labelColor="#ffffff",
+        titleColor="#ffffff",
+        orient="bottom",
+        symbolSize=180,
+        labelFontSize=12,
+        titleFontSize=13
+    )
+
     chart = alt.Chart(data).mark_bar(
         cornerRadiusTopLeft=8,
         cornerRadiusTopRight=8
