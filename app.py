@@ -1115,8 +1115,8 @@ st.altair_chart(
     ),
     use_container_width=True
 )
-            top_theme = counts.iloc[0]["Tema"]
-            top_count = counts.iloc[0]["Bilangan"]
+top_theme = counts.iloc[0]["Tema"]
+top_count = counts.iloc[0]["Bilangan"]
 
             show_audit(
                 f"Jalan kira tema {c}",
