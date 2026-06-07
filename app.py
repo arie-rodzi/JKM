@@ -1079,25 +1079,67 @@ else:
                 continue
 
             st.markdown(f"### {c}")
-            chart_cmo = alt.Chart(counts).mark_bar(cornerRadiusTopLeft=7, cornerRadiusTopRight=7).encode(
-                x=alt.X("Tema:N", sort="-y", title=None, axis=alt.Axis(labelAngle=-25)),
-                y=alt.Y("Bilangan:Q", title="Bilangan"),
-                color=alt.Color("Tema:N", legend=None),
-                tooltip=["Tema:N", "Bilangan:Q"]
-            ).properties(
-                title=f"Taburan Tema {c}",
-                height=380
-            ).configure_axis(
-                labelColor="#ffffff",
-                titleColor="#ffffff",
-                gridColor="rgba(255,255,255,0.25)"
-            ).configure_title(
-                color="#ffffff",
-                fontSize=17,
-                fontWeight="bold"
-            ).configure_view(strokeOpacity=0)
+            chart_cmo = alt.Chart(counts).mark_bar(
+    cornerRadiusTopLeft=10,
+    cornerRadiusTopRight=10
+).encode(
+    x=alt.X(
+        "Tema:N",
+        sort="-y",
+        title=None,
+        axis=alt.Axis(labelAngle=-25, labelLimit=260)
+    ),
+    y=alt.Y(
+        "Bilangan:Q",
+        title="Bilangan"
+    ),
+    color=alt.Color(
+        "Tema:N",
+        legend=None,
+        scale=alt.Scale(scheme="turbo")
+    ),
+    tooltip=[
+        alt.Tooltip("Tema:N", title="Tema"),
+        alt.Tooltip("Bilangan:Q", title="Bilangan")
+    ]
+)
 
-            st.altair_chart(chart_cmo, use_container_width=True)
+text_cmo = alt.Chart(counts).mark_text(
+    dy=-8,
+    color="#ffffff",
+    fontWeight="bold",
+    fontSize=14
+).encode(
+    x=alt.X("Tema:N", sort="-y"),
+    y=alt.Y("Bilangan:Q"),
+    text=alt.Text("Bilangan:Q")
+)
+
+chart_cmo_final = (chart_cmo + text_cmo).properties(
+    title=f"Taburan Tema {c}",
+    height=420,
+    background="transparent"
+).configure(
+    background="transparent"
+).configure_view(
+    strokeOpacity=0,
+    fill="transparent"
+).configure_axis(
+    labelColor="#ffffff",
+    titleColor="#ffffff",
+    gridColor="rgba(255,255,255,0.22)",
+    domainColor="rgba(255,255,255,0.45)",
+    tickColor="rgba(255,255,255,0.45)",
+    labelFontSize=12,
+    titleFontSize=13
+).configure_title(
+    color="#ffffff",
+    fontSize=19,
+    fontWeight="bold",
+    anchor="start"
+)
+
+st.altair_chart(chart_cmo_final, use_container_width=True)
             top_theme = counts.iloc[0]["Tema"]
             top_count = counts.iloc[0]["Bilangan"]
 
