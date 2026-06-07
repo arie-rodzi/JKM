@@ -2389,24 +2389,53 @@ st.dataframe(sim_df, use_container_width=True, hide_index=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="section">', unsafe_allow_html=True)
+
 st.markdown("## 🧾 Rumusan Pengurusan Automatik")
 
-top3 = weak_dims.head(3)
+top3 = weak_dims.head(min(3, len(weak_dims)))
 
 summary_text = f"""
 Berdasarkan analisis semasa bagi {location_text(selected_zone, selected_state, selected_type)},
-sebanyak {n:,} responden telah dianalisis. Skor keseluruhan ialah {overall:.2f}, iaitu pada tahap
-{classify_score(overall)}. Tiga dimensi yang memerlukan perhatian utama ialah
-{top3.iloc[0]['Dimensi']} ({top3.iloc[0]['Skor Purata']:.2f}),
-{top3.iloc[1]['Dimensi']} ({top3.iloc[1]['Skor Purata']:.2f}) dan
-{top3.iloc[2]['Dimensi']} ({top3.iloc[2]['Skor Purata']:.2f}).
+sebanyak {n:,} responden telah dianalisis.
+
+Indikator Keberkesanan Kaunseling (IKK) ialah {ikk_display}
+iaitu pada tahap {effectiveness_status(ikk_score)}.
+
+S1 Klien = {s1_display}
+S2 Pegawai = {s2_display}
+S3 Organisasi = {s3_display}
+
+Objektif 1 (Keberkesanan):
+Perkhidmatan berada pada tahap {effectiveness_status(ikk_score)}.
+
+Objektif 2 (Faktor Penyumbang):
+Faktor yang paling menyumbang kepada keberkesanan ialah dimensi yang mencatat skor tertinggi dalam analisis semasa.
+
+Objektif 3 (Kelemahan Pelaksanaan):
+"""
+
+if len(top3) >= 3:
+    summary_text += f"""
+Tiga dimensi yang memerlukan perhatian utama ialah:
+1. {top3.iloc[0]['Dimensi']} ({top3.iloc[0]['Skor Purata']:.2f})
+2. {top3.iloc[1]['Dimensi']} ({top3.iloc[1]['Skor Purata']:.2f})
+3. {top3.iloc[2]['Dimensi']} ({top3.iloc[2]['Skor Purata']:.2f})
+"""
+elif len(top3) > 0:
+    for i, (_, row) in enumerate(top3.iterrows(), start=1):
+        summary_text += f"\n{i}. {row['Dimensi']} ({row['Skor Purata']:.2f})"
+
+summary_text += f"""
+
+Objektif 4 (Cadangan Penambahbaikan):
+Cadangan intervensi perlu difokuskan kepada dimensi yang mencatat skor terendah,
+diikuti pengukuhan faktor organisasi, kapasiti pegawai dan keberkesanan intervensi.
 
 {zone_story}
-{state_story}
-{resp_story}
 
-Intervensi bersasar dicadangkan kepada kumpulan/lokasi ini dengan fokus kepada dimensi terendah,
-diikuti pemantauan berkala dan simulasi peningkatan skor.
+{state_story}
+
+{resp_story}
 """
 
 st.markdown(f"""
