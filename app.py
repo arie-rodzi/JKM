@@ -817,8 +817,14 @@ dim_summary["Status"] = dim_summary["Skor Purata"].apply(classify_score)
 dim_summary = dim_summary.sort_values("Skor Purata", ascending=True)
 
 st.altair_chart(
-    alt_horizontal_bar(dim_summary, "Dimensi", "Skor Purata", "Skor Purata Mengikut Dimensi / Konstruk"),
-    use_container_width=True
+    alt_horizontal_bar(
+        dim_summary,
+        "Dimensi",
+        "Skor Purata",
+        "Skor Purata Mengikut Dimensi / Konstruk"
+    ),
+    use_container_width=True,
+    theme=None
 )
 
 lowest_dim = dim_summary.iloc[0]["Dimensi"]
