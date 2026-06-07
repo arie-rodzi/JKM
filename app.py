@@ -331,338 +331,324 @@ def standardise_qual(sheets):
 
     return df
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import altair as alt
-from io import BytesIO
-from datetime import datetime
-import re
-import html
+def build_construct_map(df, selected_type):
+    if selected_type == "Klien":
+        return {
+            "Akses & Kebolehcapaian": get_cols_start(df, ["K2A"]),
+            "Komunikasi Perkhidmatan": get_cols_start(df, ["K2B"]),
+            "Hubungan Terapeutik": get_cols_start(df, ["K2C"]),
+            "Hak, Etika & Keselamatan": get_cols_start(df, ["K2D"]),
+            "Kesesuaian Intervensi": get_cols_start(df, ["K2E"]),
+            "Kesan & Perubahan Klien": get_cols_start(df, ["K2F"]),
+            "Outcome Klien": get_cols_start(df, ["K1O"])
+        }
 
-st.set_page_config(
-    page_title="JKM Psychological Services DSS-IIS",
-    page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+    if selected_type == "Pegawai":
+        return {
+            "Keberkesanan Intervensi Pegawai": get_cols_start(df, ["K3A"]),
+            "Kompetensi & Kapasiti Pegawai": get_cols_start(df, ["K3B"]),
+            "Pengurusan Kes": get_cols_start(df, ["K3C"]),
+            "SOP & Tadbir Urus": get_cols_start(df, ["K4A"]),
+            "Kolaborasi Dalaman": get_cols_start(df, ["K4B"]),
+            "Kualiti Penyampaian": get_cols_start(df, ["K4C"]),
+            "Keperluan Penambahbaikan Pegawai": get_cols_start(df, ["K5A"])
+        }
 
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "admin2026"
-DEFAULT_FILE = "JKM_7Sheet_Full_Simulation_Raw_Data(2).xlsx"
+    if selected_type == "Warga JKM":
+        return {
+            "Kesedaran Peranan": get_cols_start(df, ["K4D"]),
+            "Sokongan Organisasi": get_cols_start(df, ["K4E"]),
+            "Pematuhan Etika": get_cols_start(df, ["K4F"]),
+            "Koordinasi Sistem": get_cols_start(df, ["K4G"]),
+            "Data & Dashboard": get_cols_start(df, ["K4H"]),
+            "Keperluan Penambahbaikan Warga JKM": get_cols_start(df, ["K5B"])
+        }
+
+    general = {}
+    mapping = {
+        "Akses & Kebolehcapaian": ["K2A"],
+        "Komunikasi Perkhidmatan": ["K2B"],
+        "Hubungan Terapeutik": ["K2C"],
+        "Hak, Etika & Keselamatan": ["K2D"],
+        "Kesesuaian Intervensi": ["K2E"],
+        "Kesan & Perubahan Klien": ["K2F"],
+        "Keberkesanan Intervensi Pegawai": ["K3A"],
+        "Kompetensi & Kapasiti Pegawai": ["K3B"],
+        "Pengurusan Kes": ["K3C"],
+        "SOP & Tadbir Urus": ["K4A"],
+        "Kolaborasi Dalaman": ["K4B"],
+        "Kualiti Penyampaian": ["K4C"],
+        "Kesedaran Peranan": ["K4D"],
+        "Sokongan Organisasi": ["K4E"],
+        "Pematuhan Etika": ["K4F"],
+        "Koordinasi Sistem": ["K4G"],
+        "Data & Dashboard": ["K4H"],
+        "Keperluan Penambahbaikan Pegawai": ["K5A"],
+        "Keperluan Penambahbaikan Warga JKM": ["K5B"],
+        "Outcome Klien": ["K1O"],
+        "Kepuasan Sistem": ["SQ"],
+        "Outcome Teras": ["B"],
+        "Susulan T2": ["T2_"],
+        "Kelestarian T3": ["T3_"]
+    }
+
+    for label, prefixes in mapping.items():
+        c = get_cols_start(df, prefixes)
+        if c:
+            general[label] = c
+
+    return general
+
+
+def add_construct_scores(df, construct_map):
+    temp = df.copy()
+    valid_constructs = {}
+
+    for name, cols in construct_map.items():
+        cols = [c for c in cols if c in temp.columns]
+        if cols:
+            temp[name] = safe_mean(temp, cols)
+            if temp[name].notna().sum() > 0:
+                valid_constructs[name] = cols
+
+    if valid_constructs:
+        temp["Skor Keseluruhan"] = safe_mean(temp, list(valid_constructs.keys()))
+    else:
+        temp["Skor Keseluruhan"] = np.nan
+
+    return temp, valid_constructs
+
+
+def alt_bar(df_chart, x, y, title, sort="-y", height=430):
+    data = df_chart.copy()
+    data["Status"] = data[y].apply(
+        lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
+    )
+
+    chart = alt.Chart(data).mark_bar(
+        cornerRadiusTopLeft=8,
+        cornerRadiusTopRight=8
+    ).encode(
+        x=alt.X(f"{x}:N", sort=sort, title=None, axis=alt.Axis(labelAngle=-25)),
+        y=alt.Y(f"{y}:Q", title="Skor / Nilai"),
+        color=alt.Color(
+            "Status:N",
+            scale=alt.Scale(
+                domain=["Baik", "Sederhana", "Intervensi"],
+                range=["#00f5d4", "#fee440", "#ff4d6d"]
+            ),
+            legend=alt.Legend(title="Status", orient="bottom")
+        ),
+        tooltip=[
+            alt.Tooltip(f"{x}:N", title=x),
+            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
+            alt.Tooltip("Status:N")
+        ]
+    ).properties(title=title, height=height)
+
+    text = alt.Chart(data).mark_text(
+        dy=-8,
+        color="#ffffff",
+        fontWeight="bold"
+    ).encode(
+        x=alt.X(f"{x}:N", sort=sort),
+        y=alt.Y(f"{y}:Q"),
+        text=alt.Text(f"{y}:Q", format=".2f")
+    )
+
+    return (chart + text).configure_axis(
+        labelColor="#ffffff",
+        titleColor="#ffffff",
+        gridColor="rgba(255,255,255,0.25)",
+        domainColor="rgba(255,255,255,0.42)",
+        tickColor="rgba(255,255,255,0.42)"
+    ).configure_title(
+        color="#ffffff",
+        fontSize=18,
+        fontWeight="bold"
+    ).configure_legend(
+        labelColor="#ffffff",
+        titleColor="#ffffff"
+    ).configure_view(
+        strokeOpacity=0
+    )
+
+
+def alt_horizontal_bar(df_chart, x, y, title, height=530):
+    data = df_chart.copy()
+    data["Status"] = data[y].apply(
+        lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
+    )
+
+    chart = alt.Chart(data).mark_bar(cornerRadius=8).encode(
+        y=alt.Y(f"{x}:N", sort=alt.SortField(y, order="ascending"), title=None),
+        x=alt.X(f"{y}:Q", title="Skor Purata", scale=alt.Scale(domain=[0, 5])),
+        color=alt.Color(
+            "Status:N",
+            scale=alt.Scale(
+                domain=["Baik", "Sederhana", "Intervensi"],
+                range=["#00f5d4", "#fee440", "#ff4d6d"]
+            ),
+            legend=alt.Legend(title="Status", orient="bottom")
+        ),
+        tooltip=[
+            alt.Tooltip(f"{x}:N", title=x),
+            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
+            alt.Tooltip("Status:N")
+        ]
+    ).properties(title=title, height=height)
+
+    text = alt.Chart(data).mark_text(
+        align="left",
+        dx=6,
+        color="#ffffff",
+        fontWeight="bold"
+    ).encode(
+        y=alt.Y(f"{x}:N", sort=alt.SortField(y, order="ascending")),
+        x=alt.X(f"{y}:Q"),
+        text=alt.Text(f"{y}:Q", format=".2f")
+    )
+
+    return (chart + text).configure_axis(
+        labelColor="#ffffff",
+        titleColor="#ffffff",
+        gridColor="rgba(255,255,255,0.25)",
+        domainColor="rgba(255,255,255,0.42)",
+        tickColor="rgba(255,255,255,0.42)"
+    ).configure_title(
+        color="#ffffff",
+        fontSize=18,
+        fontWeight="bold"
+    ).configure_legend(
+        labelColor="#ffffff",
+        titleColor="#ffffff"
+    ).configure_view(
+        strokeOpacity=0
+    )
+
+
+def build_report_intro(df_all, df_filtered, selected_zone, selected_state, selected_type):
+    total_n = len(df_all)
+    filtered_n = len(df_filtered)
+
+    zone_count = df_all["Zone"].nunique(dropna=True)
+    state_count = df_all["State"].nunique(dropna=True)
+
+    resp_dist = df_all["Jenis Responden"].value_counts(dropna=False).reset_index()
+    resp_dist.columns = ["Jenis Responden", "Bilangan"]
+
+    zone_phrase = "semua zon" if selected_zone == "Semua" else f"Zon {selected_zone}"
+    state_phrase = "semua negeri" if selected_state == "Semua" else f"Negeri {selected_state}"
+    type_phrase = "semua jenis responden" if selected_type == "Semua" else f"responden {selected_type}"
+
+    intro = f"""
+Laporan analitik ini dijana oleh JKM Psychological Services Decision Support & Intervention Intelligence System (DSS-IIS).
+Sistem ini bertujuan menilai dapatan perkhidmatan psikologi dan kaunseling berdasarkan data kuantitatif,
+data kualitatif, model RE-AIM, CMO, SEM eksploratori, simulasi impak dan cadangan intervensi bersasar.
+
+Secara keseluruhan, pangkalan data mengandungi {total_n:,} rekod responden yang merangkumi {zone_count}
+zon dan {state_count} negeri. Responden terdiri daripada tiga kategori utama, iaitu Klien (S1),
+Pegawai (S2) dan Warga JKM (S3).
+
+Bagi laporan semasa, penapisan data adalah berdasarkan {zone_phrase}, {state_phrase} dan {type_phrase}.
+Selepas filter digunakan, sebanyak {filtered_n:,} rekod responden dianalisis. Semua KPI, graf, RE-AIM,
+CMO, SEM, simulasi dan intervensi dalam laporan ini adalah berdasarkan data yang telah ditapis sahaja.
+"""
+    return intro.strip(), resp_dist
+
+
+def location_text(selected_zone, selected_state, selected_type):
+    parts = []
+    if selected_zone != "Semua":
+        parts.append(f"Zon {selected_zone}")
+    if selected_state != "Semua":
+        parts.append(f"Negeri {selected_state}")
+    if selected_type != "Semua":
+        parts.append(f"kumpulan responden {selected_type}")
+    return ", ".join(parts) if parts else "semua zon, semua negeri dan semua jenis responden"
+
+
+def lowest_analysis(df, group_col, group_label):
+    if group_col not in df.columns:
+        return f"Analisis {group_label} tidak boleh dibuat kerana kolum {group_col} tiada dalam data."
+
+    temp = (
+        df.groupby(group_col, dropna=False)["Skor Keseluruhan"]
+        .agg(["mean", "count"])
+        .reset_index()
+        .rename(columns={group_col: group_label, "mean": "Skor Purata", "count": "Bilangan"})
+        .sort_values("Skor Purata", ascending=True)
+    )
+
+    if temp.empty:
+        return f"Tiada data untuk analisis {group_label}."
+
+    lowest = temp.iloc[0]
+    highest = temp.iloc[-1]
+
+    return (
+        f"Berdasarkan filter semasa, {group_label} paling rendah ialah "
+        f"{lowest[group_label]} dengan skor purata {lowest['Skor Purata']:.2f} "
+        f"melibatkan {int(lowest['Bilangan'])} responden. "
+        f"{group_label} paling tinggi ialah {highest[group_label]} dengan skor purata "
+        f"{highest['Skor Purata']:.2f} melibatkan {int(highest['Bilangan'])} responden. "
+        f"Ini menunjukkan keutamaan intervensi perlu diberi kepada {lowest[group_label]}."
+    )
+
+
+if "admin_logged" not in st.session_state:
+    st.session_state.admin_logged = False
+
+if "uploaded_excel" not in st.session_state:
+    st.session_state.uploaded_excel = None
+
 
 st.markdown("""
-<style>
-[data-testid="stSidebar"] {display:none;}
-[data-testid="collapsedControl"] {display:none;}
-
-.stApp {
-    background:
-    radial-gradient(circle at 8% 8%, rgba(255, 184, 0, .32), transparent 28%),
-    radial-gradient(circle at 92% 8%, rgba(0, 245, 212, .28), transparent 32%),
-    radial-gradient(circle at 50% 100%, rgba(255, 77, 109, .22), transparent 35%),
-    linear-gradient(135deg, #061826 0%, #102542 42%, #231942 100%);
-    color: #ffffff;
-}
-
-.block-container {
-    padding-top: 1.2rem;
-    max-width: 1550px;
-}
-
-.hero, .section, .filter-card {
-    border-radius: 28px;
-    background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(255,255,255,.055));
-    border: 1px solid rgba(255,255,255,.20);
-    box-shadow: 0 22px 70px rgba(0,0,0,.32);
-    margin-bottom: 18px;
-}
-
-.hero {
-    padding: 34px 38px;
-}
-
-.section, .filter-card {
-    padding: 24px;
-}
-
-.hero h1 {
-    font-size: 2.25rem;
-    margin: 0;
-    color: white;
-}
-
-.hero p {
-    color: #dbeafe;
-    font-size: 1.02rem;
-    max-width: 1150px;
-    line-height: 1.55;
-}
-
-.kpi {
-    padding: 22px;
-    border-radius: 24px;
-    min-height: 140px;
-    background:
-        linear-gradient(135deg, rgba(255,255,255,.20), rgba(255,255,255,.07));
-    border: 1px solid rgba(255,255,255,.22);
-    box-shadow: 0 18px 55px rgba(0,0,0,.30);
-}
-
-.kpi .label {
-    color: #dbeafe;
-    font-size: .78rem;
-    letter-spacing: .8px;
-    text-transform: uppercase;
-    font-weight: 900;
-}
-
-.kpi .value {
-    color: #ffffff;
-    font-size: 2.25rem;
-    font-weight: 950;
-    margin-top: 8px;
-}
-
-.kpi .sub {
-    color: #fee440;
-    font-size: .88rem;
-    margin-top: 4px;
-    font-weight: 800;
-}
-
-.audit {
-    margin-top: 10px;
-    padding: 15px 17px;
-    border-radius: 17px;
-    background: rgba(254, 228, 64, .15);
-    border-left: 5px solid #fee440;
-    color: #fffde7;
-    font-size: .93rem;
-    line-height: 1.55;
-}
-
-.note-blue {
-    margin-top: 10px;
-    padding: 15px 17px;
-    border-radius: 17px;
-    background: rgba(0, 245, 212, .13);
-    border-left: 5px solid #00f5d4;
-    color: #e0fffb;
-    font-size: .93rem;
-    line-height: 1.55;
-}
-
-.warning-box {
-    margin-top: 10px;
-    padding: 15px 17px;
-    border-radius: 17px;
-    background: rgba(255, 77, 109, .14);
-    border-left: 5px solid #ff4d6d;
-    color: #ffe3ea;
-    font-size: .93rem;
-    line-height: 1.55;
-}
-
-.intervention {
-    padding: 19px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, rgba(255,77,109,.20), rgba(0,245,212,.14));
-    border: 1px solid rgba(255,255,255,.18);
-    box-shadow: 0 16px 38px rgba(0,0,0,.20);
-    margin-bottom: 14px;
-}
-
-.good {color:#00f5d4;font-weight:900;}
-.warn {color:#fee440;font-weight:900;}
-.bad {color:#ff4d6d;font-weight:900;}
-
-.stButton button, .stDownloadButton button {
-    border-radius: 15px;
-    border: 0;
-    background: linear-gradient(135deg, #fee440, #ffb703);
-    color: #111827;
-    font-weight: 950;
-    padding: .75rem 1.15rem;
-}
-
-.stSelectbox label, .stFileUploader label, .stTextInput label, .stSlider label {
-    color: #ffffff !important;
-    font-weight: 900;
-}
-</style>
+<div class="hero">
+<h1>JKM Psychological Services Decision Support & Intervention Intelligence System</h1>
+<p>
+Sistem ini bukan sekadar dashboard. Ia membaca data, menjelaskan jalan kira, mengenal pasti isu mengikut Zon,
+Negeri dan Jenis Responden, mencadangkan intervensi bersasar, mensimulasikan impak, serta menjana laporan pengurusan.
+</p>
+</div>
 """, unsafe_allow_html=True)
 
 
-def html_escape(x):
-    return html.escape(str(x))
+with st.expander("🔐 Admin sahaja: login untuk upload / reset data"):
+    if not st.session_state.admin_logged:
+        c1, c2, c3 = st.columns([1, 1, 1])
+        with c1:
+            username = st.text_input("Username admin")
+        with c2:
+            password = st.text_input("Password admin", type="password")
+        with c3:
+            st.write("")
+            st.write("")
+            if st.button("Login Admin"):
+                if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+                    st.session_state.admin_logged = True
+                    st.success("Admin berjaya login. Modul upload data dibuka.")
+                    st.rerun()
+                else:
+                    st.error("Username atau password salah.")
 
+        st.caption("User biasa tidak perlu login. Login hanya untuk admin upload atau reset data.")
+    else:
+        st.success("Admin aktif. Upload data dibenarkan.")
+        uploaded_file = st.file_uploader("Upload fail Excel data JKM", type=["xlsx"])
+        if uploaded_file is not None:
+            st.session_state.uploaded_excel = uploaded_file
+            st.success("Fail berjaya dimuat naik. Dashboard menggunakan data baharu.")
 
-def safe_mean(df, cols):
-    cols = [c for c in cols if c in df.columns]
-    if not cols:
-        return pd.Series(np.nan, index=df.index)
-    return df[cols].apply(pd.to_numeric, errors="coerce").mean(axis=1)
-
-
-def cronbach_alpha(df_items):
-    df_items = df_items.apply(pd.to_numeric, errors="coerce").dropna(axis=1, how="all")
-    if df_items.shape[1] < 2:
-        return np.nan
-    df_items = df_items.fillna(df_items.mean(numeric_only=True))
-    item_var = df_items.var(axis=0, ddof=1).sum()
-    total_var = df_items.sum(axis=1).var(ddof=1)
-    k = df_items.shape[1]
-    if total_var == 0 or pd.isna(total_var):
-        return np.nan
-    return (k / (k - 1)) * (1 - item_var / total_var)
-
-
-def classify_score(score):
-    if pd.isna(score):
-        return "Tiada Data"
-    if score >= 4.0:
-        return "Baik / Kuat"
-    if score >= 3.4:
-        return "Sederhana / Perlu Pengukuhan"
-    return "Rendah / Perlu Intervensi"
-
-
-def detect_col(df, candidates):
-    lower_map = {str(c).lower().strip(): c for c in df.columns}
-    for cand in candidates:
-        if cand.lower().strip() in lower_map:
-            return lower_map[cand.lower().strip()]
-    for c in df.columns:
-        cl = str(c).lower()
-        for cand in candidates:
-            if cand.lower() in cl:
-                return c
-    return None
-
-
-def get_cols_start(df, prefixes):
-    return [c for c in df.columns if any(str(c).startswith(p) for p in prefixes)]
-
-
-def get_item_cols(df):
-    out = []
-    for c in df.columns:
-        cs = str(c).strip()
-        if re.match(r"^(K\\d+[A-Z]\\d+|K\\d+[A-Z]_\\d+|SQ\\d+|B\\d+|T2_\\d+|T3_\\d+|K1O\\d+)$", cs):
-            out.append(c)
-    return out
-
-
-def formula_text(name, cols):
-    if not cols:
-        return f"{name}: tiada item dikesan."
-    return f"{name} = ({' + '.join([str(c) for c in cols])}) / {len(cols)}"
-
-
-def show_audit(title, body):
-    st.markdown(f"""
-    <div class="audit">
-    <b>{html_escape(title)}</b><br>{body}
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def show_note(title, body):
-    st.markdown(f"""
-    <div class="note-blue">
-    <b>{html_escape(title)}</b><br>{body}
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def show_warning_box(title, body):
-    st.markdown(f"""
-    <div class="warning-box">
-    <b>{html_escape(title)}</b><br>{body}
-    </div>
-    """, unsafe_allow_html=True)
-
-
-@st.cache_data(show_spinner=False)
-def load_excel(file):
-    xls = pd.ExcelFile(file)
-    return {s: pd.read_excel(file, sheet_name=s) for s in xls.sheet_names}
-
-
-def standardise_quant(sheets):
-    frames = []
-    sheet_map = {
-        "S1_Quant_Raw": "Klien",
-        "S2_Quant_Raw": "Pegawai",
-        "S3_Quant_Raw": "Warga JKM",
-        "T123_Pilot_Raw": "Klien"
-    }
-
-    for sheet_name, jenis in sheet_map.items():
-        if sheet_name in sheets:
-            temp = sheets[sheet_name].copy()
-            temp["Jenis Responden"] = jenis
-            temp["Kod Borang"] = {"Klien": "S1", "Pegawai": "S2", "Warga JKM": "S3"}.get(jenis, "NA")
-            temp["Sumber Data"] = sheet_name
-            frames.append(temp)
-
-    if not frames:
-        return pd.DataFrame()
-
-    df = pd.concat(frames, ignore_index=True, sort=False)
-
-    zone_col = detect_col(df, ["Zone", "Zon"])
-    state_col = detect_col(df, ["State", "Negeri"])
-
-    if zone_col and zone_col != "Zone":
-        df["Zone"] = df[zone_col]
-    if state_col and state_col != "State":
-        df["State"] = df[state_col]
-
-    if "Zone" not in df.columns:
-        df["Zone"] = "Tidak Dinyatakan"
-    if "State" not in df.columns:
-        df["State"] = "Tidak Dinyatakan"
-
-    return df
-
-
-def standardise_qual(sheets):
-    frames = []
-    sheet_map = {
-        "Q1_Client_Raw": "Klien",
-        "Q2_Officer_Raw": "Pegawai",
-        "Q3_System_Raw": "Warga JKM"
-    }
-
-    for sheet_name, jenis in sheet_map.items():
-        if sheet_name in sheets:
-            temp = sheets[sheet_name].copy()
-            temp["Jenis Responden"] = jenis
-            temp["Kod Borang"] = {"Klien": "S1", "Pegawai": "S2", "Warga JKM": "S3"}.get(jenis, "NA")
-            temp["Sumber Data"] = sheet_name
-            frames.append(temp)
-
-    if not frames:
-        return pd.DataFrame()
-
-    df = pd.concat(frames, ignore_index=True, sort=False)
-
-    zone_col = detect_col(df, ["Zone", "Zon"])
-    state_col = detect_col(df, ["State", "Negeri"])
-
-    if zone_col and zone_col != "Zone":
-        df["Zone"] = df[zone_col]
-    if state_col and state_col != "State":
-        df["State"] = df[state_col]
-
-    if "Zone" not in df.columns:
-        df["Zone"] = "Tidak Dinyatakan"
-    if "State" not in df.columns:
-        df["State"] = "Tidak Dinyatakan"
-
-    return df
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Reset kepada fail asal"):
+                st.session_state.uploaded_excel = None
+                st.rerun()
+        with c2:
+            if st.button("Logout Admin"):
+                st.session_state.admin_logged = False
+                st.rerun()
 
 try:
     data_source = st.session_state.uploaded_excel if st.session_state.uploaded_excel is not None else DEFAULT_FILE
