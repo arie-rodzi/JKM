@@ -425,12 +425,31 @@ def alt_bar(df_chart, x, y, title, sort="-y", height=430):
         lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
     )
 
-    chart = alt.Chart(data).mark_bar(
-        cornerRadiusTopLeft=8,
-        cornerRadiusTopRight=8
+    base = alt.Chart(data).encode(
+        x=alt.X(
+            f"{x}:N",
+            sort=sort,
+            title=None,
+            axis=alt.Axis(labelAngle=-25, labelColor="#ffffff", titleColor="#ffffff")
+        ),
+        y=alt.Y(
+            f"{y}:Q",
+            title="Skor / Nilai",
+            scale=alt.Scale(domain=[0, 5]),
+            axis=alt.Axis(labelColor="#ffffff", titleColor="#ffffff", gridColor="rgba(255,255,255,0.25)")
+        ),
+        tooltip=[
+            alt.Tooltip(f"{x}:N", title=x),
+            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
+            alt.Tooltip("Status:N")
+        ]
+    )
+
+    bars = base.mark_bar(
+        cornerRadiusTopLeft=9,
+        cornerRadiusTopRight=9,
+        size=42
     ).encode(
-        x=alt.X(f"{x}:N", sort=sort, title=None, axis=alt.Axis(labelAngle=-25)),
-        y=alt.Y(f"{y}:Q", title="Skor / Nilai"),
         color=alt.Color(
             "Status:N",
             scale=alt.Scale(
@@ -438,46 +457,41 @@ def alt_bar(df_chart, x, y, title, sort="-y", height=430):
                 range=["#00f5d4", "#fee440", "#ff4d6d"]
             ),
             legend=alt.Legend(title="Status", orient="bottom")
-        ),
-        tooltip=[
-            alt.Tooltip(f"{x}:N", title=x),
-            alt.Tooltip(f"{y}:Q", title=y, format=".3f"),
-            alt.Tooltip("Status:N")
-        ]
-    ).properties(title=title, height=height)
+        )
+    )
 
-    text = alt.Chart(data).mark_text(
-        dy=-8,
+    text = base.mark_text(
+        dy=-10,
         color="#ffffff",
-        fontWeight="bold"
+        fontWeight="bold",
+        fontSize=13
     ).encode(
-        x=alt.X(f"{x}:N", sort=sort),
-        y=alt.Y(f"{y}:Q"),
         text=alt.Text(f"{y}:Q", format=".2f")
     )
 
-    return (chart + text).configure_axis(
+    return (bars + text).properties(
+        title=title,
+        height=height,
+        background="transparent",
+        padding={"left": 20, "right": 20, "top": 40, "bottom": 40}
+    ).configure_view(
+        strokeOpacity=0,
+        fill="transparent"
+    ).configure_axis(
         labelColor="#ffffff",
         titleColor="#ffffff",
         gridColor="rgba(255,255,255,0.25)",
-        domainColor="rgba(255,255,255,0.42)",
-        tickColor="rgba(255,255,255,0.42)"
+        domainColor="rgba(255,255,255,0.45)",
+        tickColor="rgba(255,255,255,0.45)"
     ).configure_title(
         color="#ffffff",
         fontSize=18,
-        fontWeight="bold"
+        fontWeight="bold",
+        anchor="start"
     ).configure_legend(
         labelColor="#ffffff",
-        titleColor="#ffffff"
-    ).configure_view(
-        strokeOpacity=0
-    )
-
-
-def alt_horizontal_bar(df_chart, x, y, title, height=530):
-    data = df_chart.copy()
-    data["Status"] = data[y].apply(
-        lambda v: "Baik" if v >= 4 else "Sederhana" if v >= 3.4 else "Intervensi"
+        titleColor="#ffffff",
+        orient="bottom"
     )
 
     chart = alt.Chart(data).mark_bar(cornerRadius=8).encode(
