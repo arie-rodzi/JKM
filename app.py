@@ -1128,6 +1128,133 @@ show_audit(
     """
 )
 
+# ============================================================
+# ADAPTIVE RANKING DISPLAY
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🌍 Analisis Keberkesanan Mengikut Tahap Filter")
+
+# LEVEL 1: Semua Zon + Semua Negeri
+if selected_zone == "Semua" and selected_state == "Semua":
+    st.markdown("### 🇲🇾 Ranking Keberkesanan Mengikut Zon")
+
+    zon_rank = compute_group_ikk(df, "Zone")
+
+    if not zon_rank.empty:
+        st.altair_chart(
+            ranking_chart(zon_rank, "Ranking IKK Mengikut Zon"),
+            use_container_width=True
+        )
+
+        show_note(
+            "Dapatan utama mengikut zon",
+            ranking_narrative(zon_rank, "Zon")
+        )
+
+        st.dataframe(zon_rank, use_container_width=True, hide_index=True)
+
+    st.markdown("### 🗺️ Ranking Keberkesanan Mengikut Negeri")
+
+    negeri_rank = compute_group_ikk(df, "State")
+
+    if not negeri_rank.empty:
+        st.altair_chart(
+            ranking_chart(negeri_rank, "Ranking IKK Mengikut Negeri"),
+            use_container_width=True
+        )
+
+        show_note(
+            "Dapatan utama mengikut negeri",
+            ranking_narrative(negeri_rank, "Negeri")
+        )
+
+        st.dataframe(negeri_rank, use_container_width=True, hide_index=True)
+
+    show_audit(
+        "Logik paparan ranking nasional",
+        """
+        Oleh kerana filter Zon dan Negeri berada pada pilihan <b>Semua</b>,
+        sistem memaparkan ranking perbandingan di peringkat nasional.
+        Ranking Zon menunjukkan perbandingan antara zon, manakala ranking Negeri
+        menunjukkan negeri yang paling tinggi dan paling rendah dari segi IKK.
+        """
+    )
+
+# LEVEL 2: Zon dipilih, negeri semua
+elif selected_zone != "Semua" and selected_state == "Semua":
+    st.markdown(f"### 🗺️ Ranking Negeri Dalam Zon {selected_zone}")
+
+    negeri_rank = compute_group_ikk(df, "State")
+
+    if not negeri_rank.empty:
+        st.altair_chart(
+            ranking_chart(negeri_rank, f"Ranking IKK Negeri Dalam Zon {selected_zone}"),
+            use_container_width=True
+        )
+
+        show_note(
+            f"Dapatan utama negeri dalam Zon {selected_zone}",
+            ranking_narrative(negeri_rank, "Negeri")
+        )
+
+        st.dataframe(negeri_rank, use_container_width=True, hide_index=True)
+
+    show_audit(
+        "Logik paparan apabila Zon dipilih",
+        f"""
+        Oleh kerana pengguna telah memilih <b>Zon {html_escape(selected_zone)}</b>,
+        sistem tidak lagi memaparkan ranking antara zon. Sebaliknya, sistem memaparkan
+        ranking negeri-negeri yang berada dalam zon tersebut supaya fokus analisis lebih tepat.
+        """
+    )
+
+# LEVEL 3: Negeri dipilih, jenis responden semua
+elif selected_state != "Semua" and selected_type == "Semua":
+    st.markdown(f"### 👥 Pecahan Keberkesanan Mengikut Jenis Responden di {selected_state}")
+
+    resp_rank = compute_group_ikk(df, "Jenis Responden")
+
+    if not resp_rank.empty:
+        st.altair_chart(
+            ranking_chart(resp_rank, f"IKK Mengikut Jenis Responden di {selected_state}"),
+            use_container_width=True
+        )
+
+        show_note(
+            f"Dapatan utama jenis responden di {selected_state}",
+            ranking_narrative(resp_rank, "Jenis Responden")
+        )
+
+        st.dataframe(resp_rank, use_container_width=True, hide_index=True)
+
+    show_audit(
+        "Logik paparan apabila Negeri dipilih",
+        f"""
+        Oleh kerana pengguna telah memilih <b>Negeri {html_escape(selected_state)}</b>,
+        sistem tidak lagi memaparkan ranking negeri. Sebaliknya, sistem memaparkan
+        pecahan keberkesanan mengikut jenis responden dalam negeri tersebut, iaitu
+        Klien, Pegawai dan Warga JKM.
+        """
+    )
+
+# LEVEL 4: Negeri dan jenis responden dipilih
+else:
+    show_note(
+        "Analisis fokus spesifik",
+        f"""
+        Filter semasa sudah berada pada tahap spesifik:
+        <b>Zon = {html_escape(selected_zone)}</b>,
+        <b>Negeri = {html_escape(selected_state)}</b>,
+        <b>Jenis Responden = {html_escape(selected_type)}</b>.
+        Oleh itu, sistem tidak memaparkan ranking tambahan supaya dashboard tidak terlalu padat.
+        Fokus analisis diteruskan kepada dimensi, SEM/path model, RE-AIM, CMO,
+        simulasi dan intervensi khusus kepada kumpulan ini.
+        """
+    )
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown('<div class="section">', unsafe_allow_html=True)
 st.markdown("## 📊 Analisis Dimensi / Konstruk")
 
