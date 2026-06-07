@@ -1254,6 +1254,127 @@ else:
     )
 
 st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🎯 Penilaian Mengikut Objektif Kajian")
+
+o1,o2,o3,o4 = st.tabs([
+    "O1 Keberkesanan",
+    "O2 Faktor Penyumbang",
+    "O3 Kelemahan",
+    "O4 Cadangan"
+])
+
+with o1:
+
+    st.success(f"""
+    Berdasarkan {n:,} responden selepas filter,
+    skor keberkesanan keseluruhan ialah {ikk_display}.
+
+    Status:
+    {effectiveness_status(ikk_score)}
+    """)
+
+    show_audit(
+        "Objektif 1",
+        """
+        Objektif ini menilai keberkesanan perkhidmatan
+        psikologi dan kaunseling JKM berdasarkan skor
+        keseluruhan dan indikator keberkesanan.
+        """
+    )
+
+with o2:
+
+    top3 = dim_summary.sort_values(
+        "Skor Purata",
+        ascending=False
+    ).head(3)
+
+    st.markdown("### Faktor Penyumbang Utama")
+
+    st.dataframe(
+        top3,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    narrative = []
+
+    for _, r in top3.iterrows():
+        narrative.append(
+            f"• {r['Dimensi']} ({r['Skor Purata']:.2f})"
+        )
+
+    show_note(
+        "Faktor yang menyumbang kepada keberkesanan",
+        "<br>".join(narrative)
+    )
+
+with o3:
+
+    low3 = dim_summary.sort_values(
+        "Skor Purata",
+        ascending=True
+    ).head(3)
+
+    st.markdown("### Kelemahan Utama")
+
+    st.dataframe(
+        low3,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    narrative = []
+
+    for _, r in low3.iterrows():
+        narrative.append(
+            f"• {r['Dimensi']} ({r['Skor Purata']:.2f})"
+        )
+
+    show_warning_box(
+        "Kelemahan utama yang memerlukan perhatian",
+        "<br>".join(narrative)
+    )
+
+with o4:
+
+    recommendations = []
+
+    for _, r in low3.iterrows():
+
+        dim = str(r["Dimensi"])
+
+        if "Akses" in dim:
+            recommendations.append(
+                "Meningkatkan akses kepada perkhidmatan."
+            )
+
+        elif "Komunikasi" in dim:
+            recommendations.append(
+                "Memperkukuh komunikasi pegawai dan klien."
+            )
+
+        elif "Sokongan" in dim:
+            recommendations.append(
+                "Meningkatkan sokongan organisasi dan sumber."
+            )
+
+        else:
+            recommendations.append(
+                f"Penambahbaikan khusus bagi dimensi {dim}."
+            )
+
+    for i, rec in enumerate(recommendations, start=1):
+        st.markdown(f"**{i}.** {rec}")
+
+    show_audit(
+        "Objektif 4",
+        """
+        Cadangan dijana secara automatik berdasarkan
+        dimensi dengan skor terendah selepas filter.
+        """
+    )
 
 st.markdown('<div class="section">', unsafe_allow_html=True)
 st.markdown("## 📊 Analisis Dimensi / Konstruk")
