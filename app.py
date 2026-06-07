@@ -958,6 +958,165 @@ show_audit(
     sebagai maklumat sokongan, tetapi bukan lagi KPI keberkesanan utama.
     """
 )
+
+# ============================================================
+# ADAPTIVE RANKING BY FILTER LEVEL
+# ============================================================
+
+def compute_group_ikk(df_source, group_col):
+    rows = []
+
+    if group_col not in df_source.columns:
+        return pd.DataFrame()
+
+    for group_value, sub in df_source.groupby(group_col, dropna=False):
+        s1 = sub[sub["Jenis Responden"] == "Klien"]["Skor Keseluruhan"].mean()
+        s2 = sub[sub["Jenis Responden"] == "Pegawai"]["Skor Keseluruhan"].mean()
+        s3 = sub[sub["Jenis Responden"] == "Warga JKM"]["Skor Keseluruhan"].mean()
+
+        s1p = to_percent_score(s1) if not pd.isna(s1) else np.nan
+        s2p = to_percent_score(s2) if not pd.isna(s2) else np.nan
+        s3p = to_percent_score(s3) if not pd.isna(s3) else np.nan
+
+        scores = {"S1": s1p, "S2": s2p, "S3": s3p}
+        weights = {"S1": 0.50, "S2": 0.30, "S3": 0.20}
+
+        available = {k: weights[k] for k, v in scores.items() if not pd.isna(v)}
+
+        if available:
+            total_w = sum(available.values())
+            ikk = sum(scores[k] * available[k] for k in available) / total_w
+        else:
+            ikk = np.nan
+
+        rows.append({
+            "Kategori": str(group_value),
+            "IKK (%)": ikk,
+            "S1 Klien (%)": s1p,
+            "S2 Pegawai (%)": s2p,
+            "S3 Organisasi (%)": s3p,
+            "Bilangan Responden": len(sub),
+            "Status": effectiveness_status(ikk)
+        })
+
+    out = pd.DataFrame(rows)
+    out = out.dropna(subset=["IKK (%)"])
+    out = out.sort_values("IKK (%)", ascending=False)
+    out["Ranking"] = range(1, len(out) + 1)
+    return out
+
+
+def ranking_narrative(rank_df, label):
+    if rank_df.empty:
+        return f"Tiada data mencukupi untuk analisis {label}."
+
+    top = rank_df.iloc[0]
+    bottom = rank_df.iloc[-1]
+
+    return (
+        f"{label} dengan IKK tertinggi ialah <b>{html_escape(top['Kategori'])}</b> "
+        f"({top['IKK (%)']:.1f}%, {html_escape(top['Status'])}) melibatkan "
+        f"{int(top['Bilangan Responden'])} responden. "
+        f"{label} dengan IKK terendah ialah <b>{html_escape(bottom['Kategori'])}</b> "
+        f"({bottom['IKK (%)']:.1f}%, {html_escape(bottom['Status'])}) melibatkan "
+        f"{int(bottom['Bilangan Responden'])} responden. "
+        f"Keutamaan intervensi dicadangkan kepada {html_escape(bottom['Kategori'])}."
+    )
+
+
+def ranking_chart(rank_df, title):
+    chart_data = rank_df.copy()
+    chart_data["Status Warna"] = chart_data["IKK (%)"].apply(
+        lambda v: "Sangat Berkesan" if v >= 80
+        else "Berkesan" if v >= 65
+        else "Kurang Berkesan" if v >= 50
+        else "Tidak Berkesan"
+    )
+
+    bar = (
+        alt.Chart(chart_data)
+        .mark_bar(cornerRadius=10)
+        .encode(
+            y=alt.Y(
+                "Kategori:N",
+                sort=alt.SortField("IKK (%)", order="ascending"),
+                title=None,
+                axis=alt.Axis(labelLimit=360)
+            ),
+            x=alt.X(
+                "IKK (%):Q",
+                title="Indikator Keberkesanan Kaunseling (%)",
+                scale=alt.Scale(domain=[0, 100])
+            ),
+            color=alt.Color(
+                "Status Warna:N",
+                scale=alt.Scale(
+                    domain=["Sangat Berkesan", "Berkesan", "Kurang Berkesan", "Tidak Berkesan"],
+                    range=["#00f5d4", "#06d6a0", "#fee440", "#ff4d6d"]
+                ),
+                legend=alt.Legend(title="Status", orient="bottom")
+            ),
+            tooltip=[
+                alt.Tooltip("Ranking:Q", title="Ranking"),
+                alt.Tooltip("Kategori:N", title="Kategori"),
+                alt.Tooltip("IKK (%):Q", title="IKK", format=".1f"),
+                alt.Tooltip("S1 Klien (%):Q", title="S1", format=".1f"),
+                alt.Tooltip("S2 Pegawai (%):Q", title="S2", format=".1f"),
+                alt.Tooltip("S3 Organisasi (%):Q", title="S3", format=".1f"),
+                alt.Tooltip("Bilangan Responden:Q", title="N")
+            ]
+        )
+    )
+
+    text = (
+        alt.Chart(chart_data)
+        .mark_text(
+            align="left",
+            dx=7,
+            color="#ffffff",
+            fontWeight="bold",
+            fontSize=13
+        )
+        .encode(
+            y=alt.Y(
+                "Kategori:N",
+                sort=alt.SortField("IKK (%)", order="ascending")
+            ),
+            x=alt.X("IKK (%):Q"),
+            text=alt.Text("IKK (%):Q", format=".1f")
+        )
+    )
+
+    return (
+        (bar + text)
+        .properties(
+            title=title,
+            height=max(360, 34 * len(chart_data)),
+            background="transparent"
+        )
+        .configure_view(strokeOpacity=0)
+        .configure_axis(
+            labelColor="#ffffff",
+            titleColor="#ffffff",
+            gridColor="rgba(255,255,255,0.22)",
+            domainColor="rgba(255,255,255,0.45)",
+            tickColor="rgba(255,255,255,0.45)",
+            labelFontSize=12,
+            titleFontSize=13
+        )
+        .configure_title(
+            color="#ffffff",
+            fontSize=19,
+            fontWeight="bold",
+            anchor="start"
+        )
+        .configure_legend(
+            labelColor="#ffffff",
+            titleColor="#ffffff",
+            orient="bottom",
+            symbolSize=180
+        )
+    )
 show_audit(
     "Jalan kira KPI",
     f"""
