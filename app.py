@@ -509,22 +509,24 @@ def alt_horizontal_bar(df_chart, x, y, title, height=530):
         text=alt.Text(f"{y}:Q", format=".2f")
     )
 
-    return (chart + text).configure_axis(
-        labelColor="#ffffff",
-        titleColor="#ffffff",
-        gridColor="rgba(255,255,255,0.25)",
-        domainColor="rgba(255,255,255,0.42)",
-        tickColor="rgba(255,255,255,0.42)"
-    ).configure_title(
-        color="#ffffff",
-        fontSize=18,
-        fontWeight="bold"
-    ).configure_legend(
-        labelColor="#ffffff",
-        titleColor="#ffffff"
-    ).configure_view(
-        strokeOpacity=0
-    )
+    return (chart + text).properties(
+    background="transparent"
+).configure_axis(
+    labelColor="#ffffff",
+    titleColor="#ffffff",
+    gridColor="rgba(255,255,255,0.25)",
+    domainColor="rgba(255,255,255,0.42)",
+    tickColor="rgba(255,255,255,0.42)"
+).configure_title(
+    color="#ffffff",
+    fontSize=18,
+    fontWeight="bold"
+).configure_legend(
+    labelColor="#ffffff",
+    titleColor="#ffffff"
+).configure_view(
+    strokeOpacity=0
+)
 
 
 def build_report_intro(df_all, df_filtered, selected_zone, selected_state, selected_type):
