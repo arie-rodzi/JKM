@@ -1468,108 +1468,425 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ============================================================
 
 st.markdown('<div class="section">', unsafe_allow_html=True)
-st.markdown("## 🧩 Analisis Kualitatif CMO")
+# ============================================================
+# ANALISIS MAKLUM BALAS KUALITATIF S1-S3 + CMO
+# ============================================================
+
+st.markdown('<div class="section">', unsafe_allow_html=True)
+st.markdown("## 🧩 Analisis Maklum Balas Kualitatif S1–S3 dan CMO")
+
+def detect_text_columns(dfq):
+    exclude_cols = [
+        "Zone", "State", "Jenis Responden", "Kod Borang", "Sumber Data",
+        "Respondent_ID", "ID", "Timestamp"
+    ]
+
+    text_cols = []
+
+    for c in dfq.columns:
+        if c in exclude_cols:
+            continue
+
+        sample = dfq[c].dropna().astype(str)
+
+        if sample.empty:
+            continue
+
+        avg_len = sample.str.len().mean()
+        unique_ratio = sample.nunique() / max(len(sample), 1)
+
+        if avg_len >= 15 or unique_ratio >= 0.50:
+            text_cols.append(c)
+
+    return text_cols
+
+
+def keyword_theme_counts(series):
+    text = " ".join(series.dropna().astype(str).str.lower().tolist())
+
+    theme_dict = {
+        "Akses / Temujanji": [
+            "akses", "temujanji", "appointment", "masa menunggu",
+            "jauh", "lokasi", "kaunter", "rujukan"
+        ],
+        "Komunikasi / Maklumat": [
+            "komunikasi", "maklumat", "penerangan", "jelas",
+            "tidak faham", "bahasa", "respon", "respons"
+        ],
+        "Hubungan Terapeutik": [
+            "dengar", "didengari", "empati", "percaya",
+            "selesa", "kaunselor", "terapeutik", "hubungan"
+        ],
+        "Kerahsiaan / Etika": [
+            "rahsia", "kerahsiaan", "privasi", "etika",
+            "maruah", "persetujuan", "hak"
+        ],
+        "Outcome / Perubahan": [
+            "berubah", "perubahan", "lega", "tenang", "yakin",
+            "emosi", "masalah selesai", "membantu", "berkesan"
+        ],
+        "Beban Kerja / Kapasiti": [
+            "beban", "pegawai kurang", "kekurangan", "masa",
+            "kes banyak", "staf", "perjawatan"
+        ],
+        "SOP / Sistem Kerja": [
+            "sop", "prosedur", "garis panduan", "rekod",
+            "sistem", "dashboard", "borang", "laporan"
+        ],
+        "Latihan / Kompetensi": [
+            "latihan", "kompetensi", "kemahiran", "kursus",
+            "pengetahuan", "penyeliaan", "cpd"
+        ],
+        "Sumber / Infrastruktur": [
+            "bilik", "ruang", "kemudahan", "peralatan",
+            "internet", "ict", "peruntukan", "bajet"
+        ],
+        "Cadangan Penambahbaikan": [
+            "cadang", "perlu", "tambah baik", "penambahbaikan",
+            "naik taraf", "tingkatkan", "wujudkan"
+        ]
+    }
+
+    rows = []
+
+    for theme, keywords in theme_dict.items():
+        count = sum(text.count(k) for k in keywords)
+        rows.append({
+            "Tema": theme,
+            "Bilangan Sebutan": count,
+            "Kata Kunci": ", ".join(keywords)
+        })
+
+    out = pd.DataFrame(rows)
+    out = out[out["Bilangan Sebutan"] > 0]
+    out = out.sort_values("Bilangan Sebutan", ascending=False)
+
+    return out
+
+
+def sample_quotes(dfq, text_cols, max_quotes=5):
+    quotes = []
+
+    for _, row in dfq.iterrows():
+        jenis = row.get("Jenis Responden", "Tidak Dinyatakan")
+
+        for c in text_cols:
+            val = row.get(c, None)
+
+            if pd.isna(val):
+                continue
+
+            txt = str(val).strip()
+
+            if len(txt) >= 25:
+                quotes.append({
+                    "Jenis Responden": jenis,
+                    "Soalan / Kolum": c,
+                    "Petikan Ringkas": txt[:280] + ("..." if len(txt) > 280 else "")
+                })
+
+            if len(quotes) >= max_quotes:
+                return pd.DataFrame(quotes)
+
+    return pd.DataFrame(quotes)
+
 
 if df_qual.empty:
     show_warning_box(
         "Tiada data kualitatif",
         "Tiada data kualitatif dikesan untuk filter semasa."
     )
+
 else:
+    text_cols = detect_text_columns(df_qual)
+
     cmo_cols = [
         c for c in ["CMO_Context", "CMO_Mechanism", "CMO_Outcome", "RE_AIM_Tag"]
         if c in df_qual.columns
     ]
 
-    if not cmo_cols:
+    if not text_cols and not cmo_cols:
         show_warning_box(
-            "Kolum CMO tidak ditemui",
-            "Data kualitatif wujud tetapi kolum CMO tidak ditemui."
+            "Tiada kolum teks kualitatif dikesan",
+            "Sistem tidak menemui kolum maklum balas terbuka atau kolum CMO dalam data kualitatif."
         )
+
     else:
-        for c in cmo_cols:
-            counts = (
-                df_qual[c]
-                .dropna()
-                .astype(str)
-                .value_counts()
-                .head(10)
-                .reset_index()
-            )
-            counts.columns = ["Tema", "Bilangan"]
+        total_comments = 0
 
-            if counts.empty:
-                continue
+        for c in text_cols:
+            total_comments += df_qual[c].dropna().astype(str).str.strip().replace("", np.nan).dropna().shape[0]
 
-            st.markdown(f"### {c}")
+        st.markdown("### 📌 Ringkasan Data Kualitatif")
 
-            chart_cmo = (
-                alt.Chart(counts)
-                .mark_bar(
-                    cornerRadiusTopLeft=10,
-                    cornerRadiusTopRight=10
-                )
-                .encode(
-                    x=alt.X(
-                        "Tema:N",
-                        sort="-y",
-                        title=None,
-                        axis=alt.Axis(labelAngle=-25, labelLimit=260)
-                    ),
-                    y=alt.Y(
-                        "Bilangan:Q",
-                        title="Bilangan"
-                    ),
-                    color=alt.Color(
-                        "Tema:N",
-                        legend=None,
-                        scale=alt.Scale(scheme="category20")
-                    ),
-                    tooltip=[
-                        alt.Tooltip("Tema:N", title="Tema"),
-                        alt.Tooltip("Bilangan:Q", title="Bilangan")
-                    ]
-                )
-                .properties(
-                    title=f"Taburan Tema {c}",
-                    height=420,
-                    background="transparent"
-                )
-                .configure_view(
-                    strokeOpacity=0
-                )
-                .configure_axis(
-                    labelColor="#ffffff",
-                    titleColor="#ffffff",
-                    gridColor="rgba(255,255,255,0.22)",
-                    domainColor="rgba(255,255,255,0.45)",
-                    tickColor="rgba(255,255,255,0.45)",
-                    labelFontSize=12,
-                    titleFontSize=13
-                )
-                .configure_title(
-                    color="#ffffff",
-                    fontSize=19,
-                    fontWeight="bold",
-                    anchor="start"
-                )
+        q1, q2, q3, q4 = st.columns(4)
+
+        qualitative_kpis = [
+            ("Bil. Rekod Kualitatif", f"{len(df_qual):,}"),
+            ("Bil. Kolum Teks", f"{len(text_cols):,}"),
+            ("Jumlah Komen", f"{total_comments:,}"),
+            ("Kolum CMO", f"{len(cmo_cols):,}")
+        ]
+
+        for col, (label, value) in zip([q1, q2, q3, q4], qualitative_kpis):
+            with col:
+                st.markdown(f"""
+                <div class="kpi" style="min-height:120px; padding:18px;">
+                    <div class="label">{label}</div>
+                    <div class="value" style="font-size:1.65rem;">{value}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        show_audit(
+            "Jalan kira ringkasan kualitatif",
+            """
+            Sistem mengesan kolum teks terbuka berdasarkan panjang purata jawapan dan variasi teks.
+            Kolum ringkas seperti Zon, Negeri, Jenis Responden dan ID dikecualikan.
+            Jumlah komen ialah bilangan respons teks tidak kosong dalam semua kolum terbuka yang dikesan.
+            """
+        )
+
+        # ====================================================
+        # A. ANALISIS TEMA BERDASARKAN KATA KUNCI
+        # ====================================================
+
+        if text_cols:
+            all_text_series = pd.concat(
+                [df_qual[c].dropna().astype(str) for c in text_cols],
+                ignore_index=True
             )
 
-            st.altair_chart(chart_cmo, use_container_width=True)
+            theme_df = keyword_theme_counts(all_text_series)
 
-            top_theme = counts.iloc[0]["Tema"]
-            top_count = counts.iloc[0]["Bilangan"]
+            st.markdown("### 🔎 Tema Utama Maklum Balas Terbuka")
 
-            show_audit(
-                f"Jalan kira tema {c}",
-                f"""
-                Sistem mengira kekerapan setiap tema dalam kolum <b>{html_escape(c)}</b>.
-                Tema tertinggi ialah <b>{html_escape(top_theme)}</b> dengan
-                <b>{int(top_count)}</b> sebutan.
-                """
-            )
+            if theme_df.empty:
+                show_warning_box(
+                    "Tema tidak dikesan",
+                    "Tiada tema utama dikesan berdasarkan set kata kunci semasa."
+                )
+            else:
+                theme_chart = (
+                    alt.Chart(theme_df)
+                    .mark_bar(cornerRadius=10)
+                    .encode(
+                        y=alt.Y(
+                            "Tema:N",
+                            sort=alt.SortField("Bilangan Sebutan", order="ascending"),
+                            title=None,
+                            axis=alt.Axis(labelLimit=360)
+                        ),
+                        x=alt.X(
+                            "Bilangan Sebutan:Q",
+                            title="Bilangan Sebutan"
+                        ),
+                        color=alt.Color(
+                            "Tema:N",
+                            legend=None,
+                            scale=alt.Scale(scheme="category20")
+                        ),
+                        tooltip=[
+                            alt.Tooltip("Tema:N", title="Tema"),
+                            alt.Tooltip("Bilangan Sebutan:Q", title="Sebutan"),
+                            alt.Tooltip("Kata Kunci:N", title="Kata Kunci")
+                        ]
+                    )
+                    .properties(
+                        title="Tema Utama Berdasarkan Maklum Balas Terbuka S1–S3",
+                        height=max(360, 36 * len(theme_df)),
+                        background="transparent"
+                    )
+                    .configure_view(strokeOpacity=0)
+                    .configure_axis(
+                        labelColor="#ffffff",
+                        titleColor="#ffffff",
+                        gridColor="rgba(255,255,255,0.22)",
+                        domainColor="rgba(255,255,255,0.45)",
+                        tickColor="rgba(255,255,255,0.45)",
+                        labelFontSize=12,
+                        titleFontSize=13
+                    )
+                    .configure_title(
+                        color="#ffffff",
+                        fontSize=19,
+                        fontWeight="bold",
+                        anchor="start"
+                    )
+                )
 
-            st.dataframe(counts, use_container_width=True, hide_index=True)
+                st.altair_chart(theme_chart, use_container_width=True)
+
+                top_theme = theme_df.iloc[0]["Tema"]
+                top_count = theme_df.iloc[0]["Bilangan Sebutan"]
+
+                show_note(
+                    "Dapatan tema utama",
+                    f"""
+                    Tema paling banyak muncul ialah <b>{html_escape(top_theme)}</b>
+                    dengan <b>{int(top_count)}</b> sebutan. Ini menunjukkan isu tersebut
+                    paling menonjol dalam maklum balas terbuka bagi filter semasa.
+                    """
+                )
+
+                st.dataframe(theme_df, use_container_width=True, hide_index=True)
+
+        # ====================================================
+        # B. ANALISIS MENGIKUT JENIS RESPONDEN
+        # ====================================================
+
+        if text_cols and "Jenis Responden" in df_qual.columns:
+            st.markdown("### 👥 Tema Mengikut Jenis Responden")
+
+            resp_theme_rows = []
+
+            for jenis, sub in df_qual.groupby("Jenis Responden", dropna=False):
+                sub_text = pd.concat(
+                    [sub[c].dropna().astype(str) for c in text_cols],
+                    ignore_index=True
+                )
+
+                temp_theme = keyword_theme_counts(sub_text)
+
+                if temp_theme.empty:
+                    continue
+
+                top = temp_theme.iloc[0]
+
+                resp_theme_rows.append({
+                    "Jenis Responden": jenis,
+                    "Tema Dominan": top["Tema"],
+                    "Bilangan Sebutan": top["Bilangan Sebutan"]
+                })
+
+            resp_theme_df = pd.DataFrame(resp_theme_rows)
+
+            if not resp_theme_df.empty:
+                st.dataframe(resp_theme_df, use_container_width=True, hide_index=True)
+
+                narrative = []
+                for _, r in resp_theme_df.iterrows():
+                    narrative.append(
+                        f"Bagi <b>{html_escape(r['Jenis Responden'])}</b>, tema dominan ialah "
+                        f"<b>{html_escape(r['Tema Dominan'])}</b> "
+                        f"({int(r['Bilangan Sebutan'])} sebutan)."
+                    )
+
+                show_note(
+                    "Dapatan kualitatif mengikut responden",
+                    "<br>".join(narrative)
+                )
+
+        # ====================================================
+        # C. PETIKAN RINGKAS
+        # ====================================================
+
+        if text_cols:
+            st.markdown("### 💬 Contoh Petikan Maklum Balas")
+
+            quotes_df = sample_quotes(df_qual, text_cols, max_quotes=8)
+
+            if quotes_df.empty:
+                show_warning_box(
+                    "Tiada petikan sesuai",
+                    "Tiada jawapan teks yang cukup panjang untuk dipaparkan sebagai petikan."
+                )
+            else:
+                st.dataframe(quotes_df, use_container_width=True, hide_index=True)
+
+                show_audit(
+                    "Jalan kira petikan maklum balas",
+                    """
+                    Petikan dipilih daripada jawapan teks terbuka yang mempunyai panjang minimum.
+                    Sistem hanya memaparkan petikan ringkas dan memotong teks panjang untuk
+                    menjaga kebolehbacaan dashboard.
+                    """
+                )
+
+        # ====================================================
+        # D. CMO JIKA KOLUM CMO WUJUD
+        # ====================================================
+
+        if cmo_cols:
+            st.markdown("### 🧭 Pemetaan CMO / RE-AIM")
+
+            for c in cmo_cols:
+                counts = (
+                    df_qual[c]
+                    .dropna()
+                    .astype(str)
+                    .value_counts()
+                    .head(10)
+                    .reset_index()
+                )
+
+                counts.columns = ["Tema", "Bilangan"]
+
+                if counts.empty:
+                    continue
+
+                st.markdown(f"#### {c}")
+
+                cmo_chart = (
+                    alt.Chart(counts)
+                    .mark_bar(cornerRadius=10)
+                    .encode(
+                        y=alt.Y(
+                            "Tema:N",
+                            sort=alt.SortField("Bilangan", order="ascending"),
+                            title=None,
+                            axis=alt.Axis(labelLimit=360)
+                        ),
+                        x=alt.X(
+                            "Bilangan:Q",
+                            title="Bilangan"
+                        ),
+                        color=alt.Color(
+                            "Tema:N",
+                            legend=None,
+                            scale=alt.Scale(scheme="category20")
+                        ),
+                        tooltip=[
+                            alt.Tooltip("Tema:N", title="Tema"),
+                            alt.Tooltip("Bilangan:Q", title="Bilangan")
+                        ]
+                    )
+                    .properties(
+                        title=f"Taburan {c}",
+                        height=max(320, 34 * len(counts)),
+                        background="transparent"
+                    )
+                    .configure_view(strokeOpacity=0)
+                    .configure_axis(
+                        labelColor="#ffffff",
+                        titleColor="#ffffff",
+                        gridColor="rgba(255,255,255,0.22)",
+                        domainColor="rgba(255,255,255,0.45)",
+                        tickColor="rgba(255,255,255,0.45)",
+                        labelFontSize=12,
+                        titleFontSize=13
+                    )
+                    .configure_title(
+                        color="#ffffff",
+                        fontSize=18,
+                        fontWeight="bold",
+                        anchor="start"
+                    )
+                )
+
+                st.altair_chart(cmo_chart, use_container_width=True)
+
+                top = counts.iloc[0]
+
+                show_audit(
+                    f"Jalan kira {c}",
+                    f"""
+                    Sistem mengira kekerapan setiap kategori dalam kolum <b>{html_escape(c)}</b>.
+                    Tema tertinggi ialah <b>{html_escape(top['Tema'])}</b> dengan
+                    <b>{int(top['Bilangan'])}</b> rekod.
+                    """
+                )
+
+                st.dataframe(counts, use_container_width=True, hide_index=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
