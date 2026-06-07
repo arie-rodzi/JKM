@@ -822,16 +822,132 @@ alpha = cronbach_alpha(df_filtered_raw[item_cols]) if item_cols else np.nan
 alpha_display = f"{alpha:.3f}" if not pd.isna(alpha) else "NA"
 overall_display = f"{overall:.2f}" if not pd.isna(overall) else "NA"
 
-st.markdown("## 📌 KPI Utama")
+# ============================================================
+# KPI KEBERKESANAN UTAMA
+# ============================================================
+
+def to_percent_score(x):
+    if pd.isna(x):
+        return np.nan
+    return (x / 5) * 100
+
+
+def effectiveness_status(x):
+    if pd.isna(x):
+        return "Tiada Data"
+    if x >= 80:
+        return "Sangat Berkesan"
+    if x >= 65:
+        return "Berkesan"
+    if x >= 50:
+        return "Kurang Berkesan"
+    return "Tidak Berkesan"
+
+
+# Skor ikut jenis responden berdasarkan data selepas filter
+s1_data = df[df["Jenis Responden"] == "Klien"].copy()
+s2_data = df[df["Jenis Responden"] == "Pegawai"].copy()
+s3_data = df[df["Jenis Responden"] == "Warga JKM"].copy()
+
+s1_score = to_percent_score(s1_data["Skor Keseluruhan"].mean()) if not s1_data.empty else np.nan
+s2_score = to_percent_score(s2_data["Skor Keseluruhan"].mean()) if not s2_data.empty else np.nan
+s3_score = to_percent_score(s3_data["Skor Keseluruhan"].mean()) if not s3_data.empty else np.nan
+
+# Pemberat asas
+base_weights = {
+    "S1": 0.50,
+    "S2": 0.30,
+    "S3": 0.20
+}
+
+available_scores = {
+    "S1": s1_score,
+    "S2": s2_score,
+    "S3": s3_score
+}
+
+available_weights = {
+    k: base_weights[k]
+    for k, v in available_scores.items()
+    if not pd.isna(v)
+}
+
+if available_weights:
+    total_weight = sum(available_weights.values())
+    ikk_score = sum(
+        available_scores[k] * available_weights[k]
+        for k in available_weights
+    ) / total_weight
+else:
+    ikk_score = np.nan
+
+ikk_display = f"{ikk_score:.1f}%" if not pd.isna(ikk_score) else "NA"
+s1_display = f"{s1_score:.1f}%" if not pd.isna(s1_score) else "NA"
+s2_display = f"{s2_score:.1f}%" if not pd.isna(s2_score) else "NA"
+s3_display = f"{s3_score:.1f}%" if not pd.isna(s3_score) else "NA"
+
+st.markdown("## 🎯 Indikator Keberkesanan Kaunseling JKM")
+
 k1, k2, k3, k4, k5 = st.columns(5)
 
 kpis = [
-    ("Bil. Responden", f"{n:,}", "Data selepas filter"),
-    ("Skor Keseluruhan", overall_display, classify_score(overall)),
-    ("% Baik", f"{high_pct:.1f}%", "Skor ≥ 4.00"),
-    ("% Perlu Intervensi", f"{risk_pct:.1f}%", "Skor < 3.40"),
-    ("Cronbach Alpha", alpha_display, "Konsistensi dalaman")
+    ("IKK", ikk_display, effectiveness_status(ikk_score)),
+    ("S1 Klien", s1_display, "Outcome / impak klien"),
+    ("S2 Pegawai", s2_display, "Pelaksanaan intervensi"),
+    ("S3 Organisasi", s3_display, "Sokongan sistem"),
+    ("Risiko Intervensi", f"{risk_pct:.1f}%", "Skor < 3.40")
 ]
+
+for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis):
+    with col:
+        st.markdown(f"""
+        <div class="kpi">
+            <div class="label">{label}</div>
+            <div class="value">{value}</div>
+            <div class="sub">{sub}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown("### 📋 Maklumat Data")
+
+m1, m2, m3, m4, m5 = st.columns(5)
+
+with m1:
+    st.metric("Jumlah Responden", f"{n:,}")
+
+with m2:
+    st.metric("Skor Keseluruhan", overall_display)
+
+with m3:
+    st.metric("Cronbach Alpha", alpha_display)
+
+with m4:
+    st.metric("Zon", selected_zone)
+
+with m5:
+    st.metric("Negeri", selected_state)
+
+show_audit(
+    "Jalan kira Indikator Keberkesanan Kaunseling",
+    f"""
+    Sistem mengira keberkesanan bersepadu menggunakan tiga perspektif:
+    <b>S1 Klien</b>, <b>S2 Pegawai</b> dan <b>S3 Organisasi</b>.<br><br>
+
+    Formula asas:<br>
+    <b>IKK = 0.50(S1) + 0.30(S2) + 0.20(S3)</b><br><br>
+
+    Jika sesuatu komponen tidak tersedia selepas filter, sistem menggunakan pemberat adaptif.
+    Contohnya, jika hanya S1 dan S2 tersedia, maka:<br>
+    <b>IKK = [0.50(S1) + 0.30(S2)] / 0.80</b><br><br>
+
+    Nilai semasa:<br>
+    S1 = <b>{s1_display}</b>, S2 = <b>{s2_display}</b>, S3 = <b>{s3_display}</b>.<br>
+    Maka IKK = <b>{ikk_display}</b>, iaitu <b>{effectiveness_status(ikk_score)}</b>.<br><br>
+
+    Maklumat teknikal seperti jumlah responden, skor keseluruhan dan Cronbach Alpha masih dipaparkan
+    sebagai maklumat sokongan, tetapi bukan lagi KPI keberkesanan utama.
+    """
+)
 
 for col, (label, value, sub) in zip([k1, k2, k3, k4, k5], kpis):
     with col:
