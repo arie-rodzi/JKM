@@ -961,7 +961,10 @@ else:
                 fontWeight="bold"
             ).configure_view(strokeOpacity=0)
 
-            st.altair_chart(chart_cmo, use_container_width=True)
+            st.altair_chart(
+    chart_cmo.properties(background="transparent"),
+    use_container_width=True
+)
             top_theme = counts.iloc[0]["Tema"]
             top_count = counts.iloc[0]["Bilangan"]
 
@@ -1232,7 +1235,10 @@ chart_sim = alt.Chart(sim_long).mark_bar(cornerRadiusTopLeft=7, cornerRadiusTopR
     titleColor="#ffffff"
 ).configure_view(strokeOpacity=0)
 
-st.altair_chart(chart_sim, use_container_width=True)
+st.altair_chart(
+    chart_sim.properties(background="transparent"),
+    use_container_width=True
+)
 
 show_audit(
     "Jalan kira simulasi",
